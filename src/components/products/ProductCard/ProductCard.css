@@ -1,0 +1,40 @@
+/* Location: src/components/products/ProductCard/ProductCard.css */
+
+.product-card {
+  transition: all 0.3s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-5px);
+}
+
+.product-card img {
+  transition: transform 0.3s ease;
+}
+
+.product-card:hover img {
+  transform: scale(1.05);
+}
+
+/* Discount badge animation */
+.product-card .discount-badge {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* Quick action buttons */
+.product-card .quick-actions button {
+  transition: all 0.2s ease;
+}
+
+.product-card .quick-actions button:hover {
+  transform: scale(1.1);
+}
