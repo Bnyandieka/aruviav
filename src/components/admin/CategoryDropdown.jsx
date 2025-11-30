@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FiChevronDown, FiSearch } from 'react-icons/fi';
-import { CATEGORIES } from '../utils/constants';
+import { CATEGORIES } from '../../utils/constants';
 
 const CategoryDropdown = ({ value, onChange, required = false }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -74,7 +74,12 @@ const CategoryDropdown = ({ value, onChange, required = false }) => {
                   key={category.id}
                   type="button"
                   onClick={() => {
-                    onChange({ target: { value: category.id } });
+                    onChange({ 
+                      target: { 
+                        name: 'category',
+                        value: category.id 
+                      } 
+                    });
                     setIsOpen(false);
                     setSearchTerm('');
                   }}

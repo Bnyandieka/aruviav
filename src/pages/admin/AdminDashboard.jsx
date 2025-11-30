@@ -3,17 +3,24 @@ import React, { useState, useEffect } from 'react';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../services/firebase/config';
-import { FiEdit2, FiTrash2, FiX, FiUpload } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiX, FiUpload, FiShoppingCart } from 'react-icons/fi';
 import { CATEGORIES } from '../../utils/constants';
 import CategoryDropdown from '../../components/admin/CategoryDropdown';
+import { updateOrderStatus } from '../../services/firebase/firestoreHelpers';
 
 const AdminDashboard = () => {
   const [products, setProducts] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [filteredOrders, setFilteredOrders] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [activeTab, setActiveTab] = useState('products');
+  const [updatingOrderId, setUpdatingOrderId] = useState(null);
+  const [orderUpdateMessage, setOrderUpdateMessage] = useState(null);
+  const [orderSearchTerm, setOrderSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -31,6 +38,21 @@ const AdminDashboard = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Filter orders based on search term
+  useEffect(() => {
+    if (!orderSearchTerm.trim()) {
+      setFilteredOrders(orders);
+    } else {
+      const searchLower = orderSearchTerm.toLowerCase();
+      const filtered = orders.filter(order => 
+        order.id.toLowerCase().includes(searchLower) ||
+        (order.userName && order.userName.toLowerCase().includes(searchLower)) ||
+        (order.userEmail && order.userEmail.toLowerCase().includes(searchLower))
+      );
+      setFilteredOrders(filtered);
+    }
+  }, [orders, orderSearchTerm]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -52,6 +74,23 @@ const AdminDashboard = () => {
         ...doc.data()
       }));
       setCategories(categoriesData);
+
+      // Fetch all orders
+      const ordersRef = collection(db, 'orders');
+      const ordersSnap = await getDocs(ordersRef);
+      const ordersData = ordersSnap.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      
+      // Sort orders by date descending
+      ordersData.sort((a, b) => {
+        const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt) || new Date(0);
+        const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt) || new Date(0);
+        return dateB - dateA;
+      });
+      
+      setOrders(ordersData);
     } catch (error) {
       console.error('Error fetching data:', error);
       alert('Error loading data: ' + error.message);
@@ -208,6 +247,23 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleOrderStatusUpdate = async (orderId, newStatus) => {
+    setUpdatingOrderId(orderId);
+    const result = await updateOrderStatus(orderId, newStatus);
+    
+    if (result.success) {
+      setOrders(orders.map(order => 
+        order.id === orderId ? { ...order, status: newStatus } : order
+      ));
+      setOrderUpdateMessage({ type: 'success', text: `Order status updated to ${newStatus}` });
+    } else {
+      setOrderUpdateMessage({ type: 'error', text: `Failed to update order: ${result.error}` });
+    }
+    
+    setUpdatingOrderId(null);
+    setTimeout(() => setOrderUpdateMessage(null), 3000);
+  };
+
   const handleDelete = async (productId, productName) => {
     if (!window.confirm(`Are you sure you want to delete "${productName}"? This action cannot be undone.`)) {
       return;
@@ -263,46 +319,112 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="text-gray-600 text-sm">Total Products</div>
-            <div className="text-3xl font-bold text-orange-500">{products.length}</div>
-          </div>
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="text-gray-600 text-sm">Categories</div>
-            <div className="text-3xl font-bold text-blue-500">{categories.length}</div>
-          </div>
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="text-gray-600 text-sm">In Stock</div>
-            <div className="text-3xl font-bold text-green-500">
-              {products.filter(p => p.stock > 0).length}
-            </div>
-          </div>
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="text-gray-600 text-sm">Low Stock</div>
-            <div className="text-3xl font-bold text-red-500">
-              {products.filter(p => p.stock < 10 && p.stock > 0).length}
-            </div>
+        {/* Tabs */}
+        <div className="bg-white rounded-lg shadow-md mb-6 border-b">
+          <div className="flex">
+            <button
+              onClick={() => {
+                setActiveTab('products');
+                setShowForm(false);
+              }}
+              className={`flex-1 py-4 px-6 font-semibold flex items-center justify-center gap-2 border-b-2 transition ${
+                activeTab === 'products'
+                  ? 'border-orange-500 text-orange-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              📦 Products
+            </button>
+            <button
+              onClick={() => setActiveTab('orders')}
+              className={`flex-1 py-4 px-6 font-semibold flex items-center justify-center gap-2 border-b-2 transition ${
+                activeTab === 'orders'
+                  ? 'border-orange-500 text-orange-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <FiShoppingCart /> Orders
+            </button>
           </div>
         </div>
 
-        {/* Add/Edit Product Form */}
-        {showForm && (
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">
-                {editingProduct ? 'Edit Product' : 'Add New Product'}
-              </h2>
-              <button
-                onClick={resetForm}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <FiX size={24} />
-              </button>
-            </div>
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+          {activeTab === 'products' ? (
+            <>
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="text-gray-600 text-sm">Total Products</div>
+                <div className="text-3xl font-bold text-orange-500">{products.length}</div>
+              </div>
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="text-gray-600 text-sm">Categories</div>
+                <div className="text-3xl font-bold text-blue-500">{categories.length}</div>
+              </div>
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="text-gray-600 text-sm">In Stock</div>
+                <div className="text-3xl font-bold text-green-500">
+                  {products.filter(p => p.stock > 0).length}
+                </div>
+              </div>
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="text-gray-600 text-sm">Low Stock</div>
+                <div className="text-3xl font-bold text-red-500">
+                  {products.filter(p => p.stock < 10 && p.stock > 0).length}
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="text-gray-600 text-sm">Total Orders</div>
+                <div className="text-3xl font-bold text-orange-500">{orders.length}</div>
+              </div>
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="text-gray-600 text-sm">Pending</div>
+                <div className="text-3xl font-bold text-yellow-500">{orders.filter(o => o.status === 'pending').length}</div>
+              </div>
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="text-gray-600 text-sm">Processing</div>
+                <div className="text-3xl font-bold text-blue-500">{orders.filter(o => o.status === 'processing').length}</div>
+              </div>
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="text-gray-600 text-sm">Completed</div>
+                <div className="text-3xl font-bold text-green-500">{orders.filter(o => o.status === 'completed').length}</div>
+              </div>
+            </>
+          )}
+        </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Update Message */}
+        {orderUpdateMessage && activeTab === 'orders' && (
+          <div className={`px-4 py-3 rounded-lg mb-6 border ${
+            orderUpdateMessage.type === 'success'
+              ? 'bg-green-50 border-green-200 text-green-800'
+              : 'bg-red-50 border-red-200 text-red-800'
+          }`}>
+            {orderUpdateMessage.text}
+          </div>
+        )}
+
+        {/* Products Section */}
+        {activeTab === 'products' && (
+          <>
+            {/* Add/Edit Product Form */}
+            {showForm && (
+              <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold">
+                    {editingProduct ? 'Edit Product' : 'Add New Product'}
+                  </h2>
+                  <button
+                    onClick={resetForm}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <FiX size={24} />
+                  </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">Product Name *</label>
@@ -714,6 +836,136 @@ const AdminDashboard = () => {
             </div>
           )}
         </div>
+          </>
+        )}
+
+        {/* Orders Section */}
+        {activeTab === 'orders' && (
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            {/* Search Bar */}
+            <div className="p-6 border-b">
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <label className="block text-sm font-semibold mb-2">Search Orders</label>
+                  <input
+                    type="text"
+                    placeholder="Search by Order ID, Customer Name, or Email..."
+                    value={orderSearchTerm}
+                    onChange={(e) => setOrderSearchTerm(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                  />
+                </div>
+                {orderSearchTerm && (
+                  <button
+                    onClick={() => setOrderSearchTerm('')}
+                    className="self-end px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+              <p className="text-sm text-gray-500 mt-2">
+                Found {filteredOrders.length} order{filteredOrders.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+
+            {filteredOrders.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-100 border-b">
+                      <th className="text-left py-3 px-4">Order ID</th>
+                      <th className="text-left py-3 px-4">Customer</th>
+                      <th className="text-left py-3 px-4">Email</th>
+                      <th className="text-left py-3 px-4">Date</th>
+                      <th className="text-left py-3 px-4">Items</th>
+                      <th className="text-left py-3 px-4">Total</th>
+                      <th className="text-left py-3 px-4">Status</th>
+                      <th className="text-center py-3 px-4">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredOrders.map((order) => (
+                      <tr key={order.id} className="border-b hover:bg-gray-50">
+                        <td className="py-4 px-4 font-mono text-sm">{order.id.slice(0, 8).toUpperCase()}</td>
+                        <td className="py-4 px-4">{order.userName || 'N/A'}</td>
+                        <td className="py-4 px-4 text-sm">{order.userEmail || 'N/A'}</td>
+                        <td className="py-4 px-4 text-sm">
+                          {order.createdAt
+                            ? new Date(order.createdAt).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              })
+                            : 'N/A'}
+                        </td>
+                        <td className="py-4 px-4 text-sm">{order.items?.length || 0}</td>
+                        <td className="py-4 px-4 font-semibold">{formatPrice(order.total)}</td>
+                        <td className="py-4 px-4">
+                          <span
+                            className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                              order.status === 'completed'
+                                ? 'bg-green-100 text-green-800'
+                                : order.status === 'processing'
+                                ? 'bg-blue-100 text-blue-800'
+                                : order.status === 'shipped'
+                                ? 'bg-purple-100 text-purple-800'
+                                : order.status === 'pending'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : order.status === 'cancelled'
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-orange-100 text-orange-800'
+                            }`}
+                          >
+                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                          </span>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="flex flex-wrap gap-1 justify-center">
+                            {['pending', 'processing', 'shipped', 'completed', 'cancelled', 'returned'].map((status) => (
+                              <button
+                                key={status}
+                                onClick={() => handleOrderStatusUpdate(order.id, status)}
+                                disabled={updatingOrderId === order.id || order.status === status}
+                                className={`px-2 py-1 text-xs rounded font-medium transition ${
+                                  order.status === status
+                                    ? 'bg-gray-300 text-gray-600 cursor-default'
+                                    : updatingOrderId === order.id
+                                    ? 'bg-gray-200 text-gray-500 cursor-wait'
+                                    : status === 'completed'
+                                    ? 'bg-green-500 hover:bg-green-600 text-white'
+                                    : status === 'processing'
+                                    ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                                    : status === 'shipped'
+                                    ? 'bg-purple-500 hover:bg-purple-600 text-white'
+                                    : status === 'pending'
+                                    ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
+                                    : status === 'cancelled'
+                                    ? 'bg-red-500 hover:bg-red-600 text-white'
+                                    : 'bg-orange-500 hover:bg-orange-600 text-white'
+                                }`}
+                                title={`Change to ${status}`}
+                              >
+                                {status.slice(0, 3).toUpperCase()}
+                              </button>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <FiShoppingCart className="mx-auto text-gray-300 text-4xl mb-3" />
+                <p className="text-gray-500">
+                  {orderSearchTerm ? 'No orders found matching your search' : 'No orders yet'}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
