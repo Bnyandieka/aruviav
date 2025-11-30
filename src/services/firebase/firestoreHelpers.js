@@ -332,8 +332,7 @@ export const getUserOrders = async (userId) => {
   try {
     const q = query(
       collection(db, 'orders'),
-      where('userId', '==', userId),
-      orderBy('createdAt', 'desc')
+      where('userId', '==', userId)
     );
     
     const querySnapshot = await getDocs(q);
@@ -344,6 +343,13 @@ export const getUserOrders = async (userId) => {
         id: doc.id,
         ...doc.data()
       });
+    });
+    
+    // Sort on client side by createdAt descending
+    orders.sort((a, b) => {
+      const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt) || new Date(0);
+      const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt) || new Date(0);
+      return dateB - dateA;
     });
     
     console.log(`✅ Fetched ${orders.length} orders`);

@@ -101,6 +101,16 @@ function App() {
                   }
                 />
 
+                {/* Admin Routes - Require Admin Role */}
+                <Route
+                  path="/admin"
+                  element={
+                    <AdminRoute>
+                      <AdminDashboard />
+                    </AdminRoute>
+                  }
+                />
+
                 {/* 404 Not Found */}
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>

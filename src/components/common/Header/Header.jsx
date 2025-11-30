@@ -16,7 +16,7 @@ import { signOutUser } from '../../../services/firebase/auth';
 import './Header.css';
 
 const Header = () => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { cartCount } = useCart();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
@@ -114,6 +114,18 @@ const Header = () => {
                         >
                           Wishlist
                         </Link>
+                        {isAdmin && (
+                          <>
+                            <hr className="my-2" />
+                            <Link
+                              to="/admin"
+                              className="block px-4 py-2 hover:bg-gray-100 text-orange-600 font-semibold"
+                              onClick={() => setUserMenuOpen(false)}
+                            >
+                              Admin Dashboard
+                            </Link>
+                          </>
+                        )}
                         <hr className="my-2" />
                         <button
                           onClick={() => {

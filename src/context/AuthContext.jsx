@@ -83,6 +83,7 @@ export const AuthProvider = ({ children }) => {
         displayName: displayName,
         createdAt: new Date().toISOString(),
         photoURL: user.photoURL || null,
+        isAdmin: false, // Default to false, set to true for admin users
         cart: [],
         orders: [],
         wishlist: []
@@ -129,6 +130,7 @@ export const AuthProvider = ({ children }) => {
           displayName: user.displayName,
           createdAt: new Date().toISOString(),
           photoURL: user.photoURL,
+          isAdmin: false, // Default to false, set to true for admin users
           cart: [],
           orders: [],
           wishlist: []
@@ -165,6 +167,7 @@ export const AuthProvider = ({ children }) => {
     userData,
     loading,
     isAuthenticated,
+    isAdmin: userData?.isAdmin || false,
     signup,
     login,
     loginWithGoogle,

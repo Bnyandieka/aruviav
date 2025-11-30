@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const AdminRoute = ({ children }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
 
   if (loading) {
     return (
@@ -13,9 +13,7 @@ const AdminRoute = ({ children }) => {
     );
   }
 
-  // TODO: Check if user has admin role from your backend
-  const isAdmin = user?.role === 'admin';
-
+  // Check if user is authenticated and has admin role
   if (!user || !isAdmin) {
     return <Navigate to="/" replace />;
   }

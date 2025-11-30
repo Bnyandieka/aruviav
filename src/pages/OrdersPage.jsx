@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FiArrowRight, FiPackage, FiCheck, FiClock } from 'react-icons/fi';
+import { FiArrowRight, FiPackage, FiCheck, FiClock, FiEdit2 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { db } from '../services/firebase/config';
 import Loader from '../components/common/Loader/Spinner';
+import { updateOrderStatus } from '../services/firebase/firestoreHelpers';
 
 export const OrdersPage = () => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [updatingOrder, setUpdatingOrder] = useState(null);
+  const [updateMessage, setUpdateMessage] = useState(null);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -24,10 +27,10 @@ export const OrdersPage = () => {
         
         // Query orders for the current user
         const ordersRef = collection(db, 'orders');
+        // Use only 'where' clause first without orderBy to avoid index requirements
         const q = query(
           ordersRef,
-          where('userId', '==', user.uid),
-          orderBy('createdAt', 'desc')
+          where('userId', '==', user.uid)
         );
         
         const querySnapshot = await getDocs(q);
@@ -40,11 +43,18 @@ export const OrdersPage = () => {
           });
         });
         
+        // Sort on client side instead of using Firestore orderBy
+        userOrders.sort((a, b) => {
+          const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt) || new Date(0);
+          const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt) || new Date(0);
+          return dateB - dateA;
+        });
+        
         setOrders(userOrders);
         setError(null);
       } catch (err) {
         console.error('Error fetching orders:', err);
-        setError('Failed to load orders. Please try again later.');
+        setError(`Failed to load orders: ${err.message}`);
         setOrders([]);
       } finally {
         setLoading(false);
@@ -53,6 +63,24 @@ export const OrdersPage = () => {
 
     fetchOrders();
   }, [user?.uid]);
+
+  const handleStatusUpdate = async (orderId, newStatus) => {
+    setUpdatingOrder(orderId);
+    const result = await updateOrderStatus(orderId, newStatus);
+    
+    if (result.success) {
+      // Update the order in local state
+      setOrders(orders.map(order => 
+        order.id === orderId ? { ...order, status: newStatus } : order
+      ));
+      setUpdateMessage({ type: 'success', text: `Order status updated to ${newStatus}` });
+    } else {
+      setUpdateMessage({ type: 'error', text: `Failed to update order: ${result.error}` });
+    }
+    
+    setUpdatingOrder(null);
+    setTimeout(() => setUpdateMessage(null), 3000);
+  };
 
   if (loading) {
     return <Loader />;
@@ -71,6 +99,17 @@ export const OrdersPage = () => {
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6">
             {error}
+          </div>
+        )}
+
+        {/* Update Message */}
+        {updateMessage && (
+          <div className={`px-4 py-3 rounded-lg mb-6 border ${
+            updateMessage.type === 'success'
+              ? 'bg-green-50 border-green-200 text-green-800'
+              : 'bg-red-50 border-red-200 text-red-800'
+          }`}>
+            {updateMessage.text}
           </div>
         )}
 
@@ -179,13 +218,52 @@ export const OrdersPage = () => {
                   </div>
                 )}
 
+                {/* Admin Status Management */}
+                {isAdmin && (
+                  <div className="pt-4 border-t">
+                    <h5 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                      <FiEdit2 /> Manage Order Status
+                    </h5>
+                    <div className="flex flex-wrap gap-2">
+                      {['pending', 'processing', 'shipped', 'completed', 'cancelled', 'returned'].map((status) => (
+                        <button
+                          key={status}
+                          onClick={() => handleStatusUpdate(order.id, status)}
+                          disabled={updatingOrder === order.id || order.status === status}
+                          className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${
+                            order.status === status
+                              ? 'bg-gray-300 text-gray-600 cursor-default'
+                              : updatingOrder === order.id
+                              ? 'bg-gray-200 text-gray-500 cursor-wait'
+                              : status === 'completed'
+                              ? 'bg-green-500 hover:bg-green-600 text-white'
+                              : status === 'processing'
+                              ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                              : status === 'shipped'
+                              ? 'bg-purple-500 hover:bg-purple-600 text-white'
+                              : status === 'pending'
+                              ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
+                              : status === 'returned'
+                              ? 'bg-orange-500 hover:bg-orange-600 text-white'
+                              : 'bg-red-500 hover:bg-red-600 text-white'
+                          }`}
+                        >
+                          {status.charAt(0).toUpperCase() + status.slice(1)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Action Button */}
-                <Link
-                  to={`/product/${order.items?.[0]?.id || ''}`}
-                  className="inline-flex items-center gap-2 text-orange-600 hover:text-orange-700 font-medium transition-colors"
-                >
-                  View Details <FiArrowRight />
-                </Link>
+                <div className={isAdmin ? 'pt-4 border-t mt-4' : ''}>
+                  <Link
+                    to={`/product/${order.items?.[0]?.id || ''}`}
+                    className="inline-flex items-center gap-2 text-orange-600 hover:text-orange-700 font-medium transition-colors"
+                  >
+                    View Details <FiArrowRight />
+                  </Link>
+                </div>
               </div>
             ))}
           </div>
