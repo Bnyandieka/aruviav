@@ -12,8 +12,15 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Initialize SendGrid
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+// Initialize SendGrid only if API key exists
+if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY !== 'your_sendgrid_api_key_here') {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+  console.log('✅ SendGrid configured successfully');
+} else {
+  console.warn('⚠️ WARNING: SendGrid API key not configured');
+  console.warn('📧 Emails will be logged to console only');
+  console.warn('❌ To enable real email sending, update SENDGRID_API_KEY in backend/.env');
+}
 
 /**
  * POST /api/send-email
@@ -31,6 +38,26 @@ app.post('/api/send-email', async (req, res) => {
       });
     }
 
+    console.log('\n📧 Email Request:');
+    console.log(`   To: ${to}`);
+    console.log(`   Subject: ${subject}`);
+    console.log(`   From: ${process.env.SENDGRID_FROM_EMAIL || 'support@shopki.com'}`);
+
+    // Check if SendGrid is configured
+    if (!process.env.SENDGRID_API_KEY || process.env.SENDGRID_API_KEY === 'your_sendgrid_api_key_here') {
+      console.log('   Status: ⚠️ LOGGED TO CONSOLE (SendGrid not configured)');
+      console.log('\n📧 Email Content Preview:');
+      console.log('---START EMAIL---');
+      console.log(html);
+      console.log('---END EMAIL---\n');
+      
+      return res.json({
+        success: true,
+        message: `Email logged to console (SendGrid not configured). Recipient: ${to}`,
+        note: 'To send real emails, configure SENDGRID_API_KEY in backend/.env'
+      });
+    }
+
     // Prepare email
     const msg = {
       to,
@@ -40,17 +67,17 @@ app.post('/api/send-email', async (req, res) => {
       text: text || html.replace(/<[^>]*>/g, '') // Strip HTML if no text provided
     };
 
-    // Send email
+    // Send email via SendGrid
     await sgMail.send(msg);
 
-    console.log('✅ Email sent to:', to);
+    console.log(`   Status: ✅ SENT via SendGrid\n`);
     res.json({
       success: true,
       message: `Email sent to ${to}`
     });
 
   } catch (error) {
-    console.error('❌ Error sending email:', error);
+    console.error('❌ Error sending email:', error.message);
     
     // Check if it's a SendGrid validation error
     if (error.response) {
@@ -72,7 +99,16 @@ app.post('/api/send-email', async (req, res) => {
  * Health check endpoint
  */
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Email API server is running' });
+  const sgStatus = process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY !== 'your_sendgrid_api_key_here'
+    ? 'configured'
+    : 'not_configured';
+  
+  res.json({
+    status: 'ok',
+    message: 'Email API server is running',
+    sendgrid: sgStatus,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Error handling middleware
@@ -87,7 +123,11 @@ app.use((err, req, res, next) => {
 // Start server
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-  console.log(`🚀 Email API server running on port ${PORT}`);
-  console.log(`📧 SendGrid API Key: ${process.env.SENDGRID_API_KEY ? '✅ Configured' : '❌ Missing'}`);
-  console.log(`📧 From Email: ${process.env.SENDGRID_FROM_EMAIL}`);
+  console.log(`\n🚀 Email API Server`);
+  console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+  console.log(`Port: ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`SendGrid Status: ${process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY !== 'your_sendgrid_api_key_here' ? '✅ Configured' : '⚠️ Not configured (emails logged to console)'}`);
+  console.log(`From Email: ${process.env.SENDGRID_FROM_EMAIL}`);
+  console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
 });
