@@ -5,12 +5,51 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../services/firebase/config';
 
 const categories = [
+  // Main Categories
   { name: 'Electronics', slug: 'electronics', icon: '📱', description: 'Phones, laptops, and gadgets' },
-  { name: 'Fashion', slug: 'fashion', icon: '👔', description: 'Clothing and accessories' },
-  { name: 'Home & Garden', slug: 'home', icon: '🏠', description: 'Furniture and home decor' },
-  { name: 'Sports', slug: 'sports', icon: '⚽', description: 'Sports equipment and fitness' },
-  { name: 'Health & Beauty', slug: 'beauty', icon: '💄', description: 'Beauty and personal care' },
-  { name: 'Books', slug: 'books', icon: '📚', description: 'Books and stationery' }
+  { name: 'Fashion & Apparel', slug: 'fashion-apparel', icon: '👔', description: 'Clothing and fashion items' },
+  { name: 'Home & Garden', slug: 'home-garden', icon: '🏠', description: 'Furniture and home decor' },
+  { name: 'Sports & Outdoors', slug: 'sports-outdoors', icon: '⚽', description: 'Sports equipment and outdoor gear' },
+  { name: 'Health & Beauty', slug: 'health-beauty', icon: '💄', description: 'Beauty and personal care' },
+  { name: 'Books & Media', slug: 'books-media', icon: '📚', description: 'Books, audiobooks, and media' },
+  { name: 'Toys & Games', slug: 'toys-games', icon: '🎮', description: 'Toys, games, and puzzles' },
+  { name: 'Automotive', slug: 'automotive', icon: '🚗', description: 'Car parts and accessories' },
+  { name: 'Grocery & Food', slug: 'grocery-food', icon: '🛒', description: 'Food and grocery items' },
+  { name: 'Pet Supplies', slug: 'pet-supplies', icon: '🐾', description: 'Pet food and accessories' },
+  { name: 'Baby & Kids', slug: 'baby-kids', icon: '👶', description: 'Baby and children products' },
+  { name: 'Jewelry & Accessories', slug: 'jewelry-accessories', icon: '💎', description: 'Jewelry and fashion accessories' },
+  { name: 'Office Supplies', slug: 'office-supplies', icon: '📎', description: 'Office and stationery items' },
+  { name: 'Tools & Home Improvement', slug: 'tools-home-improvement', icon: '🔧', description: 'Tools and hardware' },
+  { name: 'Arts & Crafts', slug: 'arts-crafts', icon: '🎨', description: 'Art supplies and craft materials' },
+  { name: 'Music & Instruments', slug: 'music-instruments', icon: '🎸', description: 'Musical instruments and audio' },
+  { name: 'Industrial & Scientific', slug: 'industrial-scientific', icon: '🔬', description: 'Industrial and scientific equipment' },
+  { name: 'Collectibles & Antiques', slug: 'collectibles-antiques', icon: '🏺', description: 'Collectibles and antique items' },
+  
+  // Additional Specialized Categories
+  { name: 'Furniture', slug: 'furniture', icon: '🛋️', description: 'Furniture for every room' },
+  { name: 'Appliances', slug: 'appliances', icon: '🔌', description: 'Home and kitchen appliances' },
+  { name: 'Outdoor & Camping', slug: 'outdoor-camping', icon: '⛺', description: 'Camping and outdoor equipment' },
+  { name: 'Fitness & Exercise Equipment', slug: 'fitness-exercise', icon: '💪', description: 'Gym and fitness equipment' },
+  { name: 'Video Games & Consoles', slug: 'video-games-consoles', icon: '🎯', description: 'Video games and gaming consoles' },
+  { name: 'Cell Phones & Accessories', slug: 'cell-phones-accessories', icon: '📲', description: 'Phone and mobile accessories' },
+  { name: 'Cameras & Photography', slug: 'cameras-photography', icon: '📷', description: 'Cameras and photography gear' },
+  { name: 'Software & Digital Downloads', slug: 'software-digital', icon: '💾', description: 'Software and digital products' },
+  { name: 'Movies & TV Shows', slug: 'movies-tv-shows', icon: '🎬', description: 'Movies and television content' },
+  { name: 'Shoes & Footwear', slug: 'shoes-footwear', icon: '👟', description: 'Shoes and footwear' },
+  { name: 'Watches', slug: 'watches', icon: '⌚', description: 'Watches and timepieces' },
+  { name: 'Luggage & Travel Gear', slug: 'luggage-travel', icon: '✈️', description: 'Travel bags and luggage' },
+  { name: 'Party Supplies & Events', slug: 'party-supplies', icon: '🎉', description: 'Party and event supplies' },
+  { name: 'Seasonal & Holiday Items', slug: 'seasonal-holiday', icon: '🎄', description: 'Seasonal and holiday products' },
+  { name: 'Gift Cards', slug: 'gift-cards', icon: '🎁', description: 'Digital and physical gift cards' },
+  
+  // Niche Categories
+  { name: 'Handmade & Artisan Goods', slug: 'handmade-artisan', icon: '🖐️', description: 'Handmade and artisan products' },
+  { name: 'Vintage & Used Items', slug: 'vintage-used', icon: '♻️', description: 'Vintage and pre-owned items' },
+  { name: 'Sustainable & Eco-Friendly Products', slug: 'sustainable-eco', icon: '🌱', description: 'Eco-friendly and sustainable products' },
+  { name: 'Smart Home & IoT Devices', slug: 'smart-home-iot', icon: '🏠', description: 'Smart home and IoT devices' },
+  { name: 'Medical Supplies & Equipment', slug: 'medical-supplies', icon: '⚕️', description: 'Medical and healthcare equipment' },
+  { name: 'Professional Services', slug: 'professional-services', icon: '👨‍💼', description: 'Professional services and consulting' },
+  { name: 'Subscriptions & Memberships', slug: 'subscriptions-memberships', icon: '📋', description: 'Subscription boxes and memberships' }
 ];
 
 const sampleProducts = [

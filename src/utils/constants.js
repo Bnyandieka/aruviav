@@ -74,14 +74,51 @@ export const USER_ROLES = {
 
 // Product Categories
 export const CATEGORIES = [
+  // Main Categories
   { id: 'electronics', name: 'Electronics', icon: '📱' },
-  { id: 'fashion', name: 'Fashion', icon: '👔' },
-  { id: 'home', name: 'Home & Garden', icon: '🏠' },
-  { id: 'sports', name: 'Sports', icon: '⚽' },
-  { id: 'beauty', name: 'Health & Beauty', icon: '💄' },
-  { id: 'books', name: 'Books', icon: '📚' },
-  { id: 'toys', name: 'Toys & Games', icon: '🎮' },
-  { id: 'automotive', name: 'Automotive', icon: '🚗' }
+  { id: 'fashion-apparel', name: 'Fashion & Apparel', icon: '👔' },
+  { id: 'home-garden', name: 'Home & Garden', icon: '🏠' },
+  { id: 'sports-outdoors', name: 'Sports & Outdoors', icon: '⚽' },
+  { id: 'health-beauty', name: 'Health & Beauty', icon: '💄' },
+  { id: 'books-media', name: 'Books & Media', icon: '📚' },
+  { id: 'toys-games', name: 'Toys & Games', icon: '🎮' },
+  { id: 'automotive', name: 'Automotive', icon: '🚗' },
+  { id: 'grocery-food', name: 'Grocery & Food', icon: '🛒' },
+  { id: 'pet-supplies', name: 'Pet Supplies', icon: '🐾' },
+  { id: 'baby-kids', name: 'Baby & Kids', icon: '👶' },
+  { id: 'jewelry-accessories', name: 'Jewelry & Accessories', icon: '💎' },
+  { id: 'office-supplies', name: 'Office Supplies', icon: '📎' },
+  { id: 'tools-home-improvement', name: 'Tools & Home Improvement', icon: '🔧' },
+  { id: 'arts-crafts', name: 'Arts & Crafts', icon: '🎨' },
+  { id: 'music-instruments', name: 'Music & Instruments', icon: '🎸' },
+  { id: 'industrial-scientific', name: 'Industrial & Scientific', icon: '🔬' },
+  { id: 'collectibles-antiques', name: 'Collectibles & Antiques', icon: '🏺' },
+  
+  // Additional Specialized Categories
+  { id: 'furniture', name: 'Furniture', icon: '🛋️' },
+  { id: 'appliances', name: 'Appliances', icon: '🔌' },
+  { id: 'outdoor-camping', name: 'Outdoor & Camping', icon: '⛺' },
+  { id: 'fitness-exercise', name: 'Fitness & Exercise Equipment', icon: '💪' },
+  { id: 'video-games-consoles', name: 'Video Games & Consoles', icon: '🎯' },
+  { id: 'cell-phones-accessories', name: 'Cell Phones & Accessories', icon: '📲' },
+  { id: 'cameras-photography', name: 'Cameras & Photography', icon: '📷' },
+  { id: 'software-digital', name: 'Software & Digital Downloads', icon: '💾' },
+  { id: 'movies-tv-shows', name: 'Movies & TV Shows', icon: '🎬' },
+  { id: 'shoes-footwear', name: 'Shoes & Footwear', icon: '👟' },
+  { id: 'watches', name: 'Watches', icon: '⌚' },
+  { id: 'luggage-travel', name: 'Luggage & Travel Gear', icon: '✈️' },
+  { id: 'party-supplies', name: 'Party Supplies & Events', icon: '🎉' },
+  { id: 'seasonal-holiday', name: 'Seasonal & Holiday Items', icon: '🎄' },
+  { id: 'gift-cards', name: 'Gift Cards', icon: '🎁' },
+  
+  // Niche Categories
+  { id: 'handmade-artisan', name: 'Handmade & Artisan Goods', icon: '🖐️' },
+  { id: 'vintage-used', name: 'Vintage & Used Items', icon: '♻️' },
+  { id: 'sustainable-eco', name: 'Sustainable & Eco-Friendly Products', icon: '🌱' },
+  { id: 'smart-home-iot', name: 'Smart Home & IoT Devices', icon: '🏠' },
+  { id: 'medical-supplies', name: 'Medical Supplies & Equipment', icon: '⚕️' },
+  { id: 'professional-services', name: 'Professional Services', icon: '👨‍💼' },
+  { id: 'subscriptions-memberships', name: 'Subscriptions & Memberships', icon: '📋' }
 ];
 
 // Sort Options

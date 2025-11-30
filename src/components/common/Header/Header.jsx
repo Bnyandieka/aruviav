@@ -13,6 +13,7 @@ import {
 import { useAuth } from '../../../context/AuthContext';
 import { useCart } from '../../../context/CartContext';
 import { signOutUser } from '../../../services/firebase/auth';
+import { CATEGORIES } from '../../../utils/constants';
 import './Header.css';
 
 const Header = () => {
@@ -213,24 +214,40 @@ const Header = () => {
               </Link>
             </li>
             <li>
-              <Link to="/products?category=fashion" className="hover:text-orange-500">
-                Fashion
+              <Link to="/products?category=fashion-apparel" className="hover:text-orange-500">
+                Fashion & Apparel
               </Link>
             </li>
             <li>
-              <Link to="/products?category=home" className="hover:text-orange-500">
+              <Link to="/products?category=home-garden" className="hover:text-orange-500">
                 Home & Garden
               </Link>
             </li>
             <li>
-              <Link to="/products?category=sports" className="hover:text-orange-500">
-                Sports
+              <Link to="/products?category=sports-outdoors" className="hover:text-orange-500">
+                Sports & Outdoors
               </Link>
             </li>
             <li>
-              <Link to="/products?category=beauty" className="hover:text-orange-500">
+              <Link to="/products?category=health-beauty" className="hover:text-orange-500">
                 Health & Beauty
               </Link>
+            </li>
+            <li className="relative group">
+              <button className="hover:text-orange-500 flex items-center gap-1">
+                More Categories ▼
+              </button>
+              <div className="absolute left-0 mt-0 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                {CATEGORIES.slice(5).map((category) => (
+                  <Link
+                    key={category.id}
+                    to={`/products?category=${category.id}`}
+                    className="block px-4 py-2 text-gray-700 hover:bg-orange-500 hover:text-white first:rounded-t-md last:rounded-b-md"
+                  >
+                    {category.name}
+                  </Link>
+                ))}
+              </div>
             </li>
           </ul>
         </div>
@@ -241,51 +258,18 @@ const Header = () => {
         <div className="mobile-menu md:hidden bg-white border-t">
           <div className="container mx-auto px-4 py-4">
             <ul className="space-y-4">
-              <li>
-                <Link
-                  to="/products?category=electronics"
-                  className="block hover:text-orange-500"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Electronics
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/products?category=fashion"
-                  className="block hover:text-orange-500"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Fashion
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/products?category=home"
-                  className="block hover:text-orange-500"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Home & Garden
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/products?category=sports"
-                  className="block hover:text-orange-500"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Sports
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/products?category=beauty"
-                  className="block hover:text-orange-500"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Health & Beauty
-                </Link>
-              </li>
+              <li className="font-semibold text-gray-700 pb-2 border-b">Categories</li>
+              {CATEGORIES.map((category) => (
+                <li key={category.id}>
+                  <Link
+                    to={`/products?category=${category.id}`}
+                    className="block hover:text-orange-500"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {category.icon} {category.name}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
         </div>

@@ -4,6 +4,8 @@ import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../services/firebase/config';
 import { FiEdit2, FiTrash2, FiX, FiUpload } from 'react-icons/fi';
+import { CATEGORIES } from '../../utils/constants';
+import CategoryDropdown from '../../components/admin/CategoryDropdown';
 
 const AdminDashboard = () => {
   const [products, setProducts] = useState([]);
@@ -17,7 +19,7 @@ const AdminDashboard = () => {
     description: '',
     price: '',
     originalPrice: '',
-    category: 'electronics',
+    category: '',
     stock: '',
     images: '',
     rating: '4.5',
@@ -72,7 +74,7 @@ const AdminDashboard = () => {
       description: '',
       price: '',
       originalPrice: '',
-      category: 'electronics',
+      category: '',
       stock: '',
       images: '',
       rating: '4.5',
@@ -143,7 +145,7 @@ const AdminDashboard = () => {
       description: product.description || '',
       price: product.price || '',
       originalPrice: product.originalPrice || '',
-      category: product.category || 'electronics',
+      category: product.category || '',
       stock: product.stock || '',
       images: Array.isArray(product.images) ? product.images.join(', ') : (product.image || ''),
       rating: product.rating || '4.5',
@@ -317,19 +319,11 @@ const AdminDashboard = () => {
 
                 <div>
                   <label className="block text-sm font-medium mb-2">Category *</label>
-                  <select
-                    name="category"
+                  <CategoryDropdown 
                     value={formData.category}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
-                  >
-                    <option value="electronics">Electronics</option>
-                    <option value="fashion">Fashion</option>
-                    <option value="home">Home & Garden</option>
-                    <option value="sports">Sports</option>
-                    <option value="beauty">Health & Beauty</option>
-                    <option value="books">Books</option>
-                  </select>
+                    required={true}
+                  />
                 </div>
               </div>
 
