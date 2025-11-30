@@ -6,6 +6,7 @@ import { FiCreditCard, FiPhone } from 'react-icons/fi';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { createOrder } from '../services/firebase/firestoreHelpers';
+import { sendOrderConfirmationEmail } from '../services/firebase/emailService';
 import { toast } from 'react-toastify';
 import Breadcrumb from '../components/common/Breadcrumb/Breadcrumb';
 
@@ -83,12 +84,22 @@ const CheckoutPage = () => {
         return;
       }
 
+      // Send order confirmation email
+      await sendOrderConfirmationEmail(
+        user.email,
+        user.displayName || 'Valued Customer',
+        orderId,
+        cartItems,
+        total,
+        shippingInfo
+      );
+
       // Clear cart
       await clearCart();
       
       // Redirect to success page
       navigate(`/order-success?orderId=${orderId}`);
-      toast.success('Order placed successfully!');
+      toast.success('Order placed successfully! Check your email for confirmation.');
       
     } catch (error) {
       console.error('Order error:', error);

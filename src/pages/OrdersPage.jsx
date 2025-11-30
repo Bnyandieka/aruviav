@@ -73,13 +73,16 @@ export const OrdersPage = () => {
       setOrders(orders.map(order => 
         order.id === orderId ? { ...order, status: newStatus } : order
       ));
-      setUpdateMessage({ type: 'success', text: `Order status updated to ${newStatus}` });
+      setUpdateMessage({ 
+        type: 'success', 
+        text: `✅ Order status updated to ${newStatus} and customer has been notified via email` 
+      });
     } else {
       setUpdateMessage({ type: 'error', text: `Failed to update order: ${result.error}` });
     }
     
     setUpdatingOrder(null);
-    setTimeout(() => setUpdateMessage(null), 3000);
+    setTimeout(() => setUpdateMessage(null), 4000);
   };
 
   if (loading) {

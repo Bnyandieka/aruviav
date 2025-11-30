@@ -15,6 +15,7 @@ import {
   serverTimestamp 
 } from 'firebase/firestore';
 import { db } from './config';
+import { sendOrderStatusEmail } from './emailService';
 
 /**
  * Get all products or limited number
@@ -392,12 +393,34 @@ export const getOrderById = async (orderId) => {
 export const updateOrderStatus = async (orderId, status) => {
   try {
     const docRef = doc(db, 'orders', orderId);
+    
+    // Fetch the order to get user and order details
+    const orderSnap = await getDoc(docRef);
+    if (!orderSnap.exists()) {
+      return { success: false, error: 'Order not found' };
+    }
+    
+    const orderData = orderSnap.data();
+    
+    // Update the order status in Firestore
     await updateDoc(docRef, {
       status,
       updatedAt: serverTimestamp()
     });
     
-    console.log('✅ Order status updated:', orderId);
+    // Send email notification to user
+    if (orderData.userEmail) {
+      await sendOrderStatusEmail(
+        orderData.userEmail,
+        orderData.userName || 'Customer',
+        orderId,
+        status,
+        orderData.items || [],
+        orderData.total || 0
+      );
+    }
+    
+    console.log('✅ Order status updated:', orderId, '-> Email sent to:', orderData.userEmail);
     return { success: true, error: null };
     
   } catch (error) {
