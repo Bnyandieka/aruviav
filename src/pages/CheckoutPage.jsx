@@ -5,8 +5,9 @@ import { useNavigate } from 'react-router-dom';
 import { FiCreditCard, FiPhone } from 'react-icons/fi';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { createOrder } from '../services/firebase/firestoreHelpers';
+import { createOrder, updateOrderStatus } from '../services/firebase/firestoreHelpers';
 import { sendOrderConfirmationEmail } from '../services/firebase/emailService';
+import { initiateMpesaPayment, formatPhoneNumber, validateMpesaPaymentData } from '../services/payment/mpesaService';
 import { toast } from 'react-toastify';
 import Breadcrumb from '../components/common/Breadcrumb/Breadcrumb';
 
@@ -17,6 +18,8 @@ const CheckoutPage = () => {
   
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [mpesaLoading, setMpesaLoading] = useState(false);
+  const [mpesaCheckoutId, setMpesaCheckoutId] = useState(null);
   
   const [shippingInfo, setShippingInfo] = useState({
     fullName: '',
@@ -58,6 +61,73 @@ const CheckoutPage = () => {
     return true;
   };
 
+  /**
+   * Handle M-Pesa payment
+   * Initiates STK Push when user chooses M-Pesa at checkout
+   */
+  const handleMpesaPayment = async (orderId) => {
+    try {
+      setMpesaLoading(true);
+
+      // Validate M-Pesa payment data
+      const phoneNumber = shippingInfo.phone;
+      const paymentData = {
+        phoneNumber,
+        amount: total,
+        orderId,
+        accountReference: `SHOPKI-${orderId}`,
+        description: `Shopki Order #${orderId}`
+      };
+
+      const validation = validateMpesaPaymentData(paymentData);
+      if (!validation.valid) {
+        toast.error(validation.error);
+        setMpesaLoading(false);
+        return false;
+      }
+
+      // Format phone number to M-Pesa format
+      const formattedPhone = formatPhoneNumber(phoneNumber);
+
+      console.log('📱 Initiating M-Pesa STK Push...');
+      console.log(`   Phone: ${formattedPhone}`);
+      console.log(`   Amount: KES ${total}`);
+
+      toast.info('📱 Sending M-Pesa prompt to your phone...', { autoClose: false });
+
+      // Call backend to initiate M-Pesa STK Push
+      const result = await initiateMpesaPayment({
+        ...paymentData,
+        phoneNumber: formattedPhone
+      });
+
+      if (result.success) {
+        console.log('✅ STK Push sent successfully');
+        console.log(`   Checkout ID: ${result.checkoutRequestId}`);
+        
+        setMpesaCheckoutId(result.checkoutRequestId);
+        
+        toast.success('✅ M-Pesa prompt sent! Please enter your PIN on your phone.', {
+          autoClose: 5000
+        });
+
+        // Save checkout ID to order for verification
+        // In production, you would poll the backend or wait for callback
+        return true;
+      } else {
+        console.error('❌ STK Push failed:', result.error);
+        toast.error(`Payment failed: ${result.error || 'Unable to process M-Pesa payment'}`);
+        return false;
+      }
+    } catch (error) {
+      console.error('M-Pesa payment error:', error);
+      toast.error('Payment error. Please try again.');
+      return false;
+    } finally {
+      setMpesaLoading(false);
+    }
+  };
+
   const handlePlaceOrder = async () => {
     if (!validateShippingInfo()) return;
     
@@ -72,19 +142,39 @@ const CheckoutPage = () => {
         subtotal: cartTotal,
         shippingFee,
         total,
-        status: 'pending',
+        status: paymentMethod === 'cod' ? 'pending' : 'payment_pending',
+        paymentStatus: 'pending',
         orderDate: new Date().toISOString()
       };
 
       const { orderId, error } = await createOrder(orderData);
       
       if (error) {
-        toast.error('Failed to place order');
+        toast.error('Failed to create order');
         setLoading(false);
         return;
       }
 
-      // Send order confirmation email
+      // Handle M-Pesa payment
+      if (paymentMethod === 'mpesa') {
+        const mpesaSuccess = await handleMpesaPayment(orderId);
+        
+        if (!mpesaSuccess) {
+          setLoading(false);
+          return;
+        }
+
+        // For M-Pesa, show a waiting screen for the user to complete payment
+        toast.info('⏳ Waiting for M-Pesa confirmation...', { autoClose: false });
+        
+        // In production, implement polling or callback webhook to confirm payment
+        // For now, redirect to a payment verification page
+        navigate(`/order-success?orderId=${orderId}&paymentPending=true`);
+        setLoading(false);
+        return;
+      }
+
+      // For COD and Card, send confirmation email
       await sendOrderConfirmationEmail(
         user.email,
         user.displayName || 'Valued Customer',
@@ -267,7 +357,9 @@ const CheckoutPage = () => {
 
                 <div className="space-y-4">
                   {/* M-Pesa */}
-                  <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer hover:border-orange-500">
+                  <label className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition ${
+                    paymentMethod === 'mpesa' ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-orange-500'
+                  }`}>
                     <input
                       type="radio"
                       name="payment"
@@ -278,13 +370,16 @@ const CheckoutPage = () => {
                     />
                     <FiPhone className="text-green-600 text-2xl mr-3" />
                     <div className="flex-1">
-                      <div className="font-semibold">M-Pesa</div>
-                      <div className="text-sm text-gray-600">Pay with M-Pesa mobile money</div>
+                      <div className="font-semibold">M-Pesa 🚀 Recommended</div>
+                      <div className="text-sm text-gray-600">Fast & Secure - Instant payment via M-Pesa STK Push</div>
+                      <div className="text-xs text-green-600 mt-1">✓ Instant STK prompt to your phone</div>
                     </div>
                   </label>
 
                   {/* Card Payment */}
-                  <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer hover:border-orange-500">
+                  <label className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition ${
+                    paymentMethod === 'card' ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-orange-500'
+                  }`}>
                     <input
                       type="radio"
                       name="payment"
@@ -301,7 +396,9 @@ const CheckoutPage = () => {
                   </label>
 
                   {/* Cash on Delivery */}
-                  <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer hover:border-orange-500">
+                  <label className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition ${
+                    paymentMethod === 'cod' ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-orange-500'
+                  }`}>
                     <input
                       type="radio"
                       name="payment"
@@ -317,6 +414,20 @@ const CheckoutPage = () => {
                     </div>
                   </label>
                 </div>
+
+                {/* M-Pesa Info Box */}
+                {paymentMethod === 'mpesa' && (
+                  <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <h4 className="font-semibold text-green-900 mb-2">📱 How M-Pesa Payment Works:</h4>
+                    <ul className="text-sm text-green-800 space-y-1 list-disc list-inside">
+                      <li>Click "Place Order" to proceed</li>
+                      <li>You'll receive an M-Pesa STK prompt on <strong>{shippingInfo.phone}</strong></li>
+                      <li>Enter your M-Pesa PIN to complete payment</li>
+                      <li>Order will be confirmed immediately after payment</li>
+                      <li>Check your email for order details</li>
+                    </ul>
+                  </div>
+                )}
 
                 <div className="flex gap-4 mt-6">
                   <button
@@ -364,7 +475,16 @@ const CheckoutPage = () => {
                 <div className="mb-6">
                   <h3 className="font-semibold mb-3">Payment Method</h3>
                   <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="capitalize">{paymentMethod}</p>
+                    <p className="capitalize font-semibold">
+                      {paymentMethod === 'mpesa' && '📱 M-Pesa'}
+                      {paymentMethod === 'card' && '💳 Credit/Debit Card'}
+                      {paymentMethod === 'cod' && '💵 Cash on Delivery'}
+                    </p>
+                    {paymentMethod === 'mpesa' && (
+                      <p className="text-sm text-gray-600 mt-1">
+                        ✓ STK prompt will be sent to <strong>{shippingInfo.phone}</strong>
+                      </p>
+                    )}
                   </div>
                   <button
                     onClick={() => setCurrentStep(2)}
@@ -404,10 +524,17 @@ const CheckoutPage = () => {
                   </button>
                   <button
                     onClick={handlePlaceOrder}
-                    disabled={loading}
-                    className="flex-1 bg-orange-500 text-white py-3 rounded-lg font-semibold hover:bg-orange-600 transition disabled:opacity-50"
+                    disabled={loading || mpesaLoading}
+                    className="flex-1 bg-orange-500 text-white py-3 rounded-lg font-semibold hover:bg-orange-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {loading ? 'Placing Order...' : 'Place Order'}
+                    {loading || mpesaLoading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="animate-spin">⏳</span>
+                        {paymentMethod === 'mpesa' ? 'Processing M-Pesa Payment...' : 'Placing Order...'}
+                      </span>
+                    ) : (
+                      `Place Order (${paymentMethod === 'mpesa' ? 'M-Pesa Payment' : 'Pay at Checkout'})`
+                    )}
                   </button>
                 </div>
               </div>

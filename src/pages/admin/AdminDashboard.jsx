@@ -3,9 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../services/firebase/config';
-import { FiEdit2, FiTrash2, FiX, FiUpload, FiShoppingCart } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiX, FiUpload, FiShoppingCart, FiBarChart2 } from 'react-icons/fi';
 import { CATEGORIES } from '../../utils/constants';
 import CategoryDropdown from '../../components/admin/CategoryDropdown';
+import FinanceAnalytics from '../../components/admin/FinanceAnalytics';
 import { updateOrderStatus } from '../../services/firebase/firestoreHelpers';
 
 const AdminDashboard = () => {
@@ -379,6 +380,16 @@ const AdminDashboard = () => {
             >
               <FiShoppingCart /> Orders
             </button>
+            <button
+              onClick={() => setActiveTab('finance')}
+              className={`flex-1 py-4 px-6 font-semibold flex items-center justify-center gap-2 border-b-2 transition ${
+                activeTab === 'finance'
+                  ? 'border-orange-500 text-orange-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <FiBarChart2 /> Finance & Analytics
+            </button>
           </div>
         </div>
 
@@ -407,7 +418,7 @@ const AdminDashboard = () => {
                 </div>
               </div>
             </>
-          ) : (
+          ) : activeTab === 'orders' ? (
             <>
               <div className="bg-white rounded-lg shadow-md p-6">
                 <div className="text-gray-600 text-sm">Total Orders</div>
@@ -426,7 +437,7 @@ const AdminDashboard = () => {
                 <div className="text-3xl font-bold text-green-500">{orders.filter(o => o.status === 'completed').length}</div>
               </div>
             </>
-          )}
+          ) : null}
         </div>
 
         {/* Update Message */}
@@ -1039,6 +1050,11 @@ const AdminDashboard = () => {
               </div>
             )}
           </div>
+        )}
+
+        {/* Finance & Analytics Section */}
+        {activeTab === 'finance' && (
+          <FinanceAnalytics orders={orders} products={products} />
         )}
       </div>
     </div>
