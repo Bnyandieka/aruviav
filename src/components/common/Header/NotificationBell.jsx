@@ -17,7 +17,12 @@ const NotificationBell = () => {
 
   // Listen to order updates
   useEffect(() => {
-    if (!user?.uid) return;
+    if (!user?.uid) {
+      console.log('NotificationBell: No user logged in');
+      return;
+    }
+
+    console.log('NotificationBell: Listening to orders for user:', user.uid);
 
     try {
       const ordersRef = collection(db, 'orders');
@@ -42,14 +47,23 @@ const NotificationBell = () => {
 
           // Check if this order status changed
           const previousStatus = previousOrdersRef.current[doc.id];
+          console.log(`Order ${doc.id}:`, {
+            currentStatus: orderData.status,
+            previousStatus: previousStatus,
+            changed: previousStatus && previousStatus !== orderData.status
+          });
+
           if (previousStatus && previousStatus !== orderData.status) {
             // Order status changed - show toast notification
+            console.log('STATUS CHANGED! Showing notification...');
             showOrderStatusNotification(orderData, orderData.status, previousStatus);
           } else if (!previousStatus) {
             // First time loading this order, don't show notification
+            console.log('First time loading order:', doc.id);
           }
         });
 
+        console.log('Total orders loaded:', orders.length);
         // Update the reference with current orders
         previousOrdersRef.current = currentOrders;
         
