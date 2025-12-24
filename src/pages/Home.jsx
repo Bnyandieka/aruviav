@@ -99,7 +99,7 @@ const Home = () => {
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center text-sm">
             <div className="flex items-center gap-4">
-              <span className="text-gray-300">📞 Call us: +254 700 000 000</span>
+              <span className="text-gray-300">📞 Call us: +254 748661149</span>
               <span className="hidden md:inline text-gray-300">|</span>
               <span className="hidden md:inline text-gray-300">✉️ support@shopki.com</span>
             </div>

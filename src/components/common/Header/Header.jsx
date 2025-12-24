@@ -14,6 +14,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { useCart } from '../../../context/CartContext';
 import { signOutUser } from '../../../services/firebase/auth';
 import { CATEGORIES } from '../../../utils/constants';
+import NotificationBell from './NotificationBell';
 import './Header.css';
 
 const Header = () => {
@@ -42,7 +43,7 @@ const Header = () => {
       {/* Top Bar */}
       <div className="top-bar bg-orange-500 text-white py-2">
         <div className="container mx-auto px-4 flex justify-between items-center text-sm">
-          <div>Free shipping on orders over KSh 5,000</div>
+          <div>Free shipping on all orders</div>
           <div className="flex gap-4">
             <Link to="/help" className="hover:underline">Help</Link>
             <Link to="/contact" className="hover:underline">Contact</Link>
@@ -78,6 +79,24 @@ const Header = () => {
 
             {/* Icons */}
             <div className="flex items-center gap-4">
+              {/* Notification Bell */}
+              <NotificationBell />
+
+              {/* Wishlist */}
+              <Link to="/wishlist" className="hover:text-orange-500 hidden md:block">
+                <FiHeart size={24} />
+              </Link>
+
+              {/* Cart */}
+              <Link to="/cart" className="relative hover:text-orange-500">
+                <FiShoppingCart size={24} />
+                {cartCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
+
               {/* User Menu */}
               <div className="relative">
                 <button
@@ -159,21 +178,6 @@ const Header = () => {
                   </div>
                 )}
               </div>
-
-              {/* Wishlist */}
-              <Link to="/wishlist" className="hover:text-orange-500 hidden md:block">
-                <FiHeart size={24} />
-              </Link>
-
-              {/* Cart */}
-              <Link to="/cart" className="relative hover:text-orange-500">
-                <FiShoppingCart size={24} />
-                {cartCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {cartCount}
-                  </span>
-                )}
-              </Link>
 
               {/* Mobile Menu Toggle */}
               <button

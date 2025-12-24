@@ -8,6 +8,7 @@ import 'react-toastify/dist/ReactToastify.css';
 // Context Providers
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
+import { NotificationProvider } from './context/NotificationContext';
 
 // Layout Components
 import Header from './components/common/Header/Header';
@@ -28,6 +29,7 @@ import { WishlistPage } from './pages/WishlistPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
+import SeedDataPage from './pages/SeedDataPage';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -44,7 +46,8 @@ function App() {
     <Router>
       <AuthProvider>
         <CartProvider>
-          <div className="App min-h-screen flex flex-col">
+          <NotificationProvider>
+            <div className="App min-h-screen flex flex-col">
             {/* Toast Notifications */}
             <ToastContainer
               position="top-right"
@@ -74,6 +77,7 @@ function App() {
                 <Route path="/signup" element={<SignupPage />} />
                 <Route path="/terms" element={<TermsPage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
+                <Route path="/seed-data" element={<SeedDataPage />} />
 
                 {/* Checkout - Can be accessed by guests */}
                 <Route path="/checkout" element={<CheckoutPage />} />
@@ -123,6 +127,7 @@ function App() {
             {/* Footer */}
             <Footer />
           </div>
+          </NotificationProvider>
         </CartProvider>
       </AuthProvider>
     </Router>
