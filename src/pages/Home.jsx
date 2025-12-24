@@ -162,8 +162,8 @@ const Home = () => {
                 <div className="max-w-xl">
                   <p className="text-sm uppercase tracking-wide mb-2 text-orange-100">Limited Time Offer</p>
                   <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                    Super Sale
-                    <span className="block text-3xl md:text-4xl mt-2">Up to 50% Off</span>
+                    Shop Easy 
+                    <span className="block text-3xl md:text-4xl mt-2">Now available in Gusii Region</span>
                   </h1>
                   <p className="text-lg md:text-xl mb-6 text-orange-50">
                     On all electronics, fashion, and home appliances

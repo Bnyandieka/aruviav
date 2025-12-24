@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FiBell, FiX, FiPackage, FiTruck, FiCheck, FiAlertCircle } from 'react-icons/fi';
 import { useNotifications } from '../../../context/NotificationContext';
 import { useAuth } from '../../../context/AuthContext';
 import { collection, query, where, onSnapshot, orderBy, limit } from 'firebase/firestore';
 import { db } from '../../../services/firebase/config';
+import { toast } from 'react-toastify';
 import './NotificationBell.css';
 
 const NotificationBell = () => {
@@ -12,6 +13,7 @@ const NotificationBell = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [orderNotifications, setOrderNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const previousOrdersRef = useRef({});
 
   // Listen to order updates
   useEffect(() => {
@@ -28,14 +30,30 @@ const NotificationBell = () => {
 
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const orders = [];
+        const currentOrders = {};
+
         snapshot.forEach((doc) => {
-          orders.push({
+          const orderData = {
             id: doc.id,
             ...doc.data()
-          });
+          };
+          orders.push(orderData);
+          currentOrders[doc.id] = orderData.status;
+
+          // Check if this order status changed
+          const previousStatus = previousOrdersRef.current[doc.id];
+          if (previousStatus && previousStatus !== orderData.status) {
+            // Order status changed - show toast notification
+            showOrderStatusNotification(orderData, orderData.status, previousStatus);
+          } else if (!previousStatus) {
+            // First time loading this order, don't show notification
+          }
         });
+
+        // Update the reference with current orders
+        previousOrdersRef.current = currentOrders;
+        
         setOrderNotifications(orders);
-        // Count unread notifications
         setUnreadCount(orders.length);
       });
 
@@ -44,6 +62,34 @@ const NotificationBell = () => {
       console.error('Error listening to orders:', error);
     }
   }, [user?.uid]);
+
+  const showOrderStatusNotification = (order, newStatus, previousStatus) => {
+    const statusMessages = {
+      pending: '⏳ Order placed',
+      processing: '🔄 Order is being processed',
+      shipped: '🚚 Order shipped',
+      delivered: '✅ Order delivered',
+      cancelled: '❌ Order cancelled',
+      returned: '↩️ Order returned'
+    };
+
+    const message = statusMessages[newStatus?.toLowerCase()] || `Order status updated to ${newStatus}`;
+    
+    toast.info(
+      <div>
+        <p className="font-semibold">Order #{order.id.slice(0, 8).toUpperCase()}</p>
+        <p>{message}</p>
+      </div>,
+      {
+        position: 'top-right',
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      }
+    );
+  };
 
   const getStatusIcon = (status) => {
     switch (status?.toLowerCase()) {
