@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FiX, FiMail, FiLock, FiUser, FiEye, FiEyeOff } from 'react-icons/fi';
 import { FcGoogle } from 'react-icons/fc';
 import { useAuth } from '../../context/AuthContext';
+import ForgotPassword from './ForgotPassword/ForgotPassword';
 
 const AuthModal = ({ isOpen, onClose, defaultView = 'login' }) => {
+  const navigate = useNavigate();
   const { login, signup, loginWithGoogle } = useAuth();
   const [view, setView] = useState(defaultView);
   const [showPassword, setShowPassword] = useState(false);
@@ -73,6 +76,12 @@ const AuthModal = ({ isOpen, onClose, defaultView = 'login' }) => {
 
       if (result.success) {
         onClose();
+        // Redirect to email verification page
+        if (result.needsEmailVerification) {
+          setTimeout(() => {
+            navigate('/verify-email');
+          }, 500);
+        }
       } else {
         setError(result.error || 'Signup failed. Please try again.');
       }
@@ -159,6 +168,15 @@ const AuthModal = ({ isOpen, onClose, defaultView = 'login' }) => {
               >
                 {loading ? 'Logging in...' : 'Login'}
               </button>
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => setView('forgot')}
+                  className="text-orange-500 hover:underline text-sm font-semibold"
+                >
+                  Forgot Password?
+                </button>
+              </div>
             </form>
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
@@ -287,6 +305,18 @@ const AuthModal = ({ isOpen, onClose, defaultView = 'login' }) => {
                 Login
               </button>
             </p>
+          </div>
+        )}
+
+        {view === 'forgot' && (
+          <div>
+            <ForgotPassword 
+              onBack={() => setView('login')}
+              onSuccess={() => {
+                setView('login');
+                onClose();
+              }}
+            />
           </div>
         )}
       </div>

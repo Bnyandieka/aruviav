@@ -39,6 +39,9 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import ProtectedRoute from './routes/ProtectedRoute';
 import AdminRoute from './routes/AdminRoute';
 
+// Notification Components
+import NotificationContainer from './components/common/NotificationContainer';
+
 // Global Styles
 import './App.css';
 
@@ -53,6 +56,9 @@ function App() {
           <NotificationProvider>
             <ThemeProvider>
               <div className="App min-h-screen flex flex-col">
+              {/* Notification Container */}
+              <NotificationContainer />
+
               {/* Toast Notifications */}
               <ToastContainer
               position="top-right"

@@ -11,9 +11,11 @@ import {
   deleteFlashSale,
   getFlashSaleStats
 } from '../../services/firebase/flashSalesHelper';
+import { useNotifications } from '../../context/NotificationContext';
 import Loader from '../../components/common/Loader/Spinner';
 
 export const FlashSalesAdmin = () => {
+  const { addNotification } = useNotifications();
   const [flashSales, setFlashSales] = useState([]);
   const [eligibleProducts, setEligibleProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -57,15 +59,27 @@ export const FlashSalesAdmin = () => {
       const result = await createAutoFlashSale(formData.name || 'Auto Flash Sale', 10);
       
       if (result.success) {
-        alert(`✅ Flash sale created with ${result.productCount} products!`);
+        addNotification({
+          type: 'success',
+          title: 'Success',
+          message: `Flash sale created with ${result.productCount} products!`
+        });
         setFormData({ name: '', description: '', duration: 24 });
         setShowForm(false);
         loadData();
       } else {
-        alert(`❌ Error: ${result.error}`);
+        addNotification({
+          type: 'error',
+          title: 'Error',
+          message: result.error
+        });
       }
     } catch (error) {
-      alert(`❌ Error: ${error.message}`);
+      addNotification({
+        type: 'error',
+        title: 'Error',
+        message: error.message
+      });
     } finally {
       setLoading(false);
     }
@@ -73,7 +87,11 @@ export const FlashSalesAdmin = () => {
 
   const handleCreateManualFlashSale = async () => {
     if (selectedProducts.length === 0) {
-      alert('Please select at least one product');
+      addNotification({
+        type: 'warning',
+        title: 'Warning',
+        message: 'Please select at least one product'
+      });
       return;
     }
 
@@ -87,16 +105,28 @@ export const FlashSalesAdmin = () => {
       );
 
       if (result.success) {
-        alert(`✅ Flash sale created with ${selectedProducts.length} products!`);
+        addNotification({
+          type: 'success',
+          title: 'Success',
+          message: `Flash sale created with ${selectedProducts.length} products!`
+        });
         setFormData({ name: '', description: '', duration: 24 });
         setSelectedProducts([]);
         setShowForm(false);
         loadData();
       } else {
-        alert(`❌ Error: ${result.error}`);
+        addNotification({
+          type: 'error',
+          title: 'Error',
+          message: result.error
+        });
       }
     } catch (error) {
-      alert(`❌ Error: ${error.message}`);
+      addNotification({
+        type: 'error',
+        title: 'Error',
+        message: error.message
+      });
     } finally {
       setLoading(false);
     }
@@ -110,7 +140,11 @@ export const FlashSalesAdmin = () => {
           loadData();
         }
       } catch (error) {
-        alert(`Error: ${error.message}`);
+        addNotification({
+          type: 'error',
+          title: 'Error',
+          message: error.message
+        });
       }
     }
   };
@@ -123,7 +157,11 @@ export const FlashSalesAdmin = () => {
           loadData();
         }
       } catch (error) {
-        alert(`Error: ${error.message}`);
+        addNotification({
+          type: 'error',
+          title: 'Error',
+          message: error.message
+        });
       }
     }
   };

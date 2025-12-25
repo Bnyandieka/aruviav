@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { FiTrendingUp, FiDollarSign, FiShoppingCart, FiUsers, FiDownload } from 'react-icons/fi';
+import { useNotifications } from '../../context/NotificationContext';
 
 const FinanceAnalytics = ({ orders = [], products = [] }) => {
+  const { addNotification } = useNotifications();
   const [financialData, setFinancialData] = useState({
     totalRevenue: 0,
     totalCommission: 0,
@@ -49,20 +51,24 @@ const FinanceAnalytics = ({ orders = [], products = [] }) => {
 
     // Process all orders
     filteredOrders.forEach(order => {
-      const orderAmount = parseFloat(order.totalAmount) || 0;
+      // Try both 'total' and 'totalAmount' fields
+      const orderAmount = parseFloat(order.total || order.totalAmount || 0);
       totalRevenue += orderAmount;
 
       // Monthly breakdown
       if (order.createdAt) {
-        const date = new Date(order.createdAt);
-        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        monthlyData[monthKey] = (monthlyData[monthKey] || 0) + orderAmount;
+        const date = order.createdAt?.toDate?.() || new Date(order.createdAt);
+        if (!isNaN(date.getTime())) {
+          const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+          monthlyData[monthKey] = (monthlyData[monthKey] || 0) + orderAmount;
+        }
       }
 
       // Product sales tracking
       if (order.items && Array.isArray(order.items)) {
         order.items.forEach(item => {
-          const productId = item.productId;
+          // Try both 'productId' and 'id' fields
+          const productId = item.productId || item.id;
           const quantity = item.quantity || 1;
           productSales[productId] = (productSales[productId] || 0) + quantity;
         });
@@ -139,7 +145,11 @@ const FinanceAnalytics = ({ orders = [], products = [] }) => {
   const downloadReport = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
-      alert('Please allow pop-ups to download the report');
+      addNotification({
+        type: 'warning',
+        title: 'Pop-ups Required',
+        message: 'Please allow pop-ups to download the report'
+      });
       return;
     }
     

@@ -152,152 +152,178 @@ export const subscribeToNewsletter = async ({ email, firstName = '', lastName = 
  * @returns {Promise}
  */
 export const sendOrderConfirmationEmail = async (email, orderData) => {
-  const itemsHtml = orderData.items.map(item => `
-    <tr style="border-bottom: 1px solid #eee;">
-      <td style="padding: 15px; color: #333;">${item.name}</td>
-      <td style="padding: 15px; text-align: center; color: #666;">x${item.quantity}</td>
-      <td style="padding: 15px; text-align: right; color: #ff9800; font-weight: 600;">KES ${(item.price * item.quantity).toLocaleString()}</td>
-    </tr>
-  `).join('');
+  try {
+    // Fetch the 'orderConfirmation' email template from admin settings
+    const template = await getEmailTemplate('orderConfirmation');
+    
+    // Prepare order items HTML
+    const itemsHtml = orderData.items.map(item => `
+      <tr style="border-bottom: 1px solid #eee;">
+        <td style="padding: 15px; color: #333;">${item.name}</td>
+        <td style="padding: 15px; text-align: center; color: #666;">x${item.quantity}</td>
+        <td style="padding: 15px; text-align: right; color: #ff9800; font-weight: 600;">KES ${(item.price * item.quantity).toLocaleString()}</td>
+      </tr>
+    `).join('');
 
-  const orderDate = new Date(orderData.createdAt).toLocaleDateString('en-US', { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  });
+    const orderDate = new Date(orderData.createdAt || orderData.orderDate).toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
 
-  const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-          .header { background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: white; padding: 40px 20px; text-align: center; border-radius: 8px 8px 0 0; }
-          .header h1 { margin: 0; font-size: 28px; font-weight: 600; }
-          .badge { display: inline-block; background-color: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 20px; font-size: 12px; margin-top: 10px; }
-          .content { padding: 40px 30px; }
-          .section { margin: 25px 0; }
-          .order-info { background-color: #fff3e0; border-left: 4px solid #ff9800; padding: 20px; margin: 20px 0; border-radius: 4px; }
-          .order-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
-          .info-item { font-size: 14px; }
-          .info-label { color: #ff9800; font-weight: 600; margin-bottom: 4px; }
-          .info-value { color: #333; font-size: 16px; font-weight: 500; }
-          h2 { color: #333; margin-bottom: 10px; border-bottom: 3px solid #ff9800; padding-bottom: 10px; }
-          h3 { color: #ff9800; font-size: 16px; margin: 20px 0 15px 0; }
-          .items-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-          .items-table thead tr { background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: white; }
-          .items-table th { padding: 15px; text-align: left; font-weight: 600; }
-          .summary { background-color: #f9f9f9; padding: 20px; border-radius: 6px; margin: 20px 0; }
-          .summary-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
-          .summary-row:last-child { border-bottom: none; }
-          .total-row { background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: white; padding: 15px; border-radius: 6px; font-size: 18px; font-weight: 700; margin-top: 15px; }
-          .cta-button { display: inline-block; background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 20px 0; }
-          .cta-button:hover { transform: translateY(-2px); }
-          .delivery-info { background-color: #e8f5e9; border-left: 4px solid #4caf50; padding: 15px; margin: 20px 0; border-radius: 4px; color: #2e7d32; font-weight: 500; }
-          .footer { background-color: #f9f9f9; padding: 30px; text-align: center; border-top: 1px solid #eee; font-size: 12px; color: #888; border-radius: 0 0 8px 8px; }
-          .divider { border: none; border-top: 1px solid #eee; margin: 20px 0; }
-          @media (max-width: 600px) {
-            .content { padding: 20px 15px; }
-            .header { padding: 30px 15px; }
-            .order-info-grid { grid-template-columns: 1fr; }
-            .items-table { font-size: 14px; }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>✅ Order Confirmed!</h1>
-            <div class="badge">Your order has been received</div>
-          </div>
-          
-          <div class="content">
-            <p style="font-size: 16px; color: #555;">Thank you for shopping with <strong>Shopki</strong>! We're excited to get your order ready.</p>
-            
-            <div class="order-info">
-              <div class="order-info-grid">
-                <div class="info-item">
-                  <div class="info-label">Order ID</div>
-                  <div class="info-value">${orderData.id.slice(0, 12).toUpperCase()}</div>
+    let htmlContent;
+    if (template && template.htmlContent) {
+      // Use admin-configured template with variable replacement
+      const variables = {
+        orderNumber: orderData.id.slice(0, 12).toUpperCase(),
+        orderDate: orderDate,
+        items: itemsHtml,
+        subtotal: orderData.subtotal ? orderData.subtotal.toLocaleString() : orderData.total.toLocaleString(),
+        total: orderData.total.toLocaleString(),
+        shippingFee: orderData.shippingFee ? orderData.shippingFee.toLocaleString() : 'Free',
+        trackingUrl: `${process.env.REACT_APP_BASE_URL}/orders/${orderData.id}`,
+        currentYear: new Date().getFullYear()
+      };
+      htmlContent = replaceTemplateVariables(template.htmlContent, variables);
+    } else {
+      // Fallback to default template if admin template not configured
+      htmlContent = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+              body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+              .header { background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: white; padding: 40px 20px; text-align: center; border-radius: 8px 8px 0 0; }
+              .header h1 { margin: 0; font-size: 28px; font-weight: 600; }
+              .badge { display: inline-block; background-color: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 20px; font-size: 12px; margin-top: 10px; }
+              .content { padding: 40px 30px; }
+              .section { margin: 25px 0; }
+              .order-info { background-color: #fff3e0; border-left: 4px solid #ff9800; padding: 20px; margin: 20px 0; border-radius: 4px; }
+              .order-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+              .info-item { font-size: 14px; }
+              .info-label { color: #ff9800; font-weight: 600; margin-bottom: 4px; }
+              .info-value { color: #333; font-size: 16px; font-weight: 500; }
+              h2 { color: #333; margin-bottom: 10px; border-bottom: 3px solid #ff9800; padding-bottom: 10px; }
+              h3 { color: #ff9800; font-size: 16px; margin: 20px 0 15px 0; }
+              .items-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+              .items-table thead tr { background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: white; }
+              .items-table th { padding: 15px; text-align: left; font-weight: 600; }
+              .summary { background-color: #f9f9f9; padding: 20px; border-radius: 6px; margin: 20px 0; }
+              .summary-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+              .summary-row:last-child { border-bottom: none; }
+              .total-row { background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: white; padding: 15px; border-radius: 6px; font-size: 18px; font-weight: 700; margin-top: 15px; }
+              .cta-button { display: inline-block; background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 20px 0; }
+              .cta-button:hover { transform: translateY(-2px); }
+              .delivery-info { background-color: #e8f5e9; border-left: 4px solid #4caf50; padding: 15px; margin: 20px 0; border-radius: 4px; color: #2e7d32; font-weight: 500; }
+              .footer { background-color: #f9f9f9; padding: 30px; text-align: center; border-top: 1px solid #eee; font-size: 12px; color: #888; border-radius: 0 0 8px 8px; }
+              .divider { border: none; border-top: 1px solid #eee; margin: 20px 0; }
+              @media (max-width: 600px) {
+                .content { padding: 20px 15px; }
+                .header { padding: 30px 15px; }
+                .order-info-grid { grid-template-columns: 1fr; }
+                .items-table { font-size: 14px; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1>✅ Order Confirmed!</h1>
+                <div class="badge">Your order has been received</div>
+              </div>
+              
+              <div class="content">
+                <p style="font-size: 16px; color: #555;">Thank you for shopping with <strong>Shopki</strong>! We're excited to get your order ready.</p>
+                
+                <div class="order-info">
+                  <div class="order-info-grid">
+                    <div class="info-item">
+                      <div class="info-label">Order ID</div>
+                      <div class="info-value">${orderData.id.slice(0, 12).toUpperCase()}</div>
+                    </div>
+                    <div class="info-item">
+                      <div class="info-label">Order Date</div>
+                      <div class="info-value">${orderDate}</div>
+                    </div>
+                  </div>
                 </div>
-                <div class="info-item">
-                  <div class="info-label">Order Date</div>
-                  <div class="info-value">${orderDate}</div>
+                
+                <h2>📦 Order Items</h2>
+                <table class="items-table">
+                  <thead>
+                    <tr>
+                      <th>Product</th>
+                      <th style="text-align: center;">Quantity</th>
+                      <th style="text-align: right;">Price</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${itemsHtml}
+                  </tbody>
+                </table>
+                
+                <div class="summary">
+                  <div class="summary-row">
+                    <span style="color: #666;">Subtotal:</span>
+                    <span style="color: #666;">KES ${orderData.total.toLocaleString()}</span>
+                  </div>
+                  <div class="summary-row">
+                    <span style="color: #666;">Shipping:</span>
+                    <span style="color: #4caf50; font-weight: 600;">Free</span>
+                  </div>
+                  <div class="total-row">
+                    <span>Total Paid: KES ${orderData.total.toLocaleString()}</span>
+                  </div>
                 </div>
+                
+                <div class="delivery-info">
+                  📍 Estimated Delivery: 3-5 Business Days
+                </div>
+                
+                <div style="text-align: center;">
+                  <a href="${process.env.REACT_APP_BASE_URL}/orders/${orderData.id}" class="cta-button">Track Your Order</a>
+                </div>
+                
+                <hr class="divider">
+                
+                <h3>📝 What's Next?</h3>
+                <ul style="color: #666; line-height: 1.8;">
+                  <li>We'll prepare your items for shipment</li>
+                  <li>You'll receive a shipping notification with tracking details</li>
+                  <li>Track your order in real-time from your dashboard</li>
+                  <li>Questions? Visit our <a href="${process.env.REACT_APP_BASE_URL}/contact" style="color: #ff9800;">support page</a></li>
+                </ul>
+                
+                <hr class="divider">
+                
+                <p style="font-size: 14px; color: #888; text-align: center;">
+                  Thank you for being part of the Shopki family! Happy shopping! 🛍️
+                </p>
+              </div>
+              
+              <div class="footer">
+                <p style="margin: 10px 0;">© 2025 Shopki. All rights reserved.</p>
+                <p style="margin: 10px 0; font-size: 11px;">This is an automated order confirmation. Please do not reply to this email.</p>
+                <p style="margin: 10px 0;"><a href="${process.env.REACT_APP_BASE_URL}/privacy" style="color: #ff9800; text-decoration: none;">Privacy Policy</a> | <a href="${process.env.REACT_APP_BASE_URL}/terms" style="color: #ff9800; text-decoration: none;">Terms & Conditions</a></p>
               </div>
             </div>
-            
-            <h2>📦 Order Items</h2>
-            <table class="items-table">
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th style="text-align: center;">Quantity</th>
-                  <th style="text-align: right;">Price</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${itemsHtml}
-              </tbody>
-            </table>
-            
-            <div class="summary">
-              <div class="summary-row">
-                <span style="color: #666;">Subtotal:</span>
-                <span style="color: #666;">KES ${orderData.total.toLocaleString()}</span>
-              </div>
-              <div class="summary-row">
-                <span style="color: #666;">Shipping:</span>
-                <span style="color: #4caf50; font-weight: 600;">Free</span>
-              </div>
-              <div class="total-row">
-                <span>Total Paid: KES ${orderData.total.toLocaleString()}</span>
-              </div>
-            </div>
-            
-            <div class="delivery-info">
-              📍 Estimated Delivery: 3-5 Business Days
-            </div>
-            
-            <div style="text-align: center;">
-              <a href="${process.env.REACT_APP_BASE_URL}/orders/${orderData.id}" class="cta-button">Track Your Order</a>
-            </div>
-            
-            <hr class="divider">
-            
-            <h3>📝 What's Next?</h3>
-            <ul style="color: #666; line-height: 1.8;">
-              <li>We'll prepare your items for shipment</li>
-              <li>You'll receive a shipping notification with tracking details</li>
-              <li>Track your order in real-time from your dashboard</li>
-              <li>Questions? Visit our <a href="${process.env.REACT_APP_BASE_URL}/contact" style="color: #ff9800;">support page</a></li>
-            </ul>
-            
-            <hr class="divider">
-            
-            <p style="font-size: 14px; color: #888; text-align: center;">
-              Thank you for being part of the Shopki family! Happy shopping! 🛍️
-            </p>
-          </div>
-          
-          <div class="footer">
-            <p style="margin: 10px 0;">© 2025 Shopki. All rights reserved.</p>
-            <p style="margin: 10px 0; font-size: 11px;">This is an automated order confirmation. Please do not reply to this email.</p>
-            <p style="margin: 10px 0;"><a href="${process.env.REACT_APP_BASE_URL}/privacy" style="color: #ff9800; text-decoration: none;">Privacy Policy</a> | <a href="${process.env.REACT_APP_BASE_URL}/terms" style="color: #ff9800; text-decoration: none;">Terms & Conditions</a></p>
-          </div>
-        </div>
-      </body>
-    </html>
-  `;
+          </body>
+        </html>
+      `;
+    }
 
-  return sendTransactionalEmail({
-    email,
-    subject: `✅ Order Confirmed - Shopki Order #${orderData.id.slice(0, 8).toUpperCase()}`,
-    htmlContent
-  });
+    return sendTransactionalEmail({
+      email,
+      subject: `✅ Order Confirmed - Shopki Order #${orderData.id.slice(0, 8).toUpperCase()}`,
+      htmlContent
+    });
+  } catch (error) {
+    console.error('Error sending order confirmation email:', error);
+    return { success: false, error: error.message };
+  }
 };
 
 /**
@@ -307,29 +333,52 @@ export const sendOrderConfirmationEmail = async (email, orderData) => {
  * @returns {Promise}
  */
 export const sendOrderStatusEmail = async (email, orderData) => {
-  const statusMessages = {
-    pending: 'Your order has been received and is being prepared.',
-    processing: 'Your order is being processed and will be shipped soon.',
-    shipped: 'Your order has been shipped! Track your package with the tracking number below.',
-    completed: 'Your order has been delivered. We hope you enjoy your purchase!',
-    cancelled: 'Your order has been cancelled.',
-    returned: 'Your return has been processed.'
-  };
+  try {
+    // Fetch the 'orderStatus' email template from admin settings
+    const template = await getEmailTemplate('orderStatus');
+    
+    const statusMessages = {
+      pending: 'Your order has been received and is being prepared.',
+      processing: 'Your order is being processed and will be shipped soon.',
+      shipped: 'Your order has been shipped! Track your package with the tracking number below.',
+      completed: 'Your order has been delivered. We hope you enjoy your purchase!',
+      cancelled: 'Your order has been cancelled.',
+      returned: 'Your return has been processed.'
+    };
 
-  const htmlContent = `
-    <h2>Order Status Update</h2>
-    <p><strong>Order ID:</strong> ${orderData.id.slice(0, 8).toUpperCase()}</p>
-    <p><strong>New Status:</strong> ${orderData.status.toUpperCase()}</p>
-    <p>${statusMessages[orderData.status] || 'Your order status has been updated.'}</p>
-    ${orderData.trackingNumber ? `<p><strong>Tracking Number:</strong> ${orderData.trackingNumber}</p>` : ''}
-    <p><a href="${process.env.REACT_APP_BASE_URL}/orders/${orderData.id}">View Order Details</a></p>
-  `;
+    let htmlContent;
+    if (template && template.htmlContent) {
+      // Use admin-configured template with variable replacement
+      const variables = {
+        orderNumber: orderData.id.slice(0, 12).toUpperCase(),
+        status: orderData.status.toUpperCase(),
+        statusMessage: statusMessages[orderData.status] || 'Your order status has been updated.',
+        trackingNumber: orderData.trackingNumber || '',
+        trackingUrl: `${process.env.REACT_APP_BASE_URL}/orders/${orderData.id}`,
+        currentYear: new Date().getFullYear()
+      };
+      htmlContent = replaceTemplateVariables(template.htmlContent, variables);
+    } else {
+      // Fallback to default template if admin template not configured
+      htmlContent = `
+        <h2>Order Status Update</h2>
+        <p><strong>Order ID:</strong> ${orderData.id.slice(0, 8).toUpperCase()}</p>
+        <p><strong>New Status:</strong> ${orderData.status.toUpperCase()}</p>
+        <p>${statusMessages[orderData.status] || 'Your order status has been updated.'}</p>
+        ${orderData.trackingNumber ? `<p><strong>Tracking Number:</strong> ${orderData.trackingNumber}</p>` : ''}
+        <p><a href="${process.env.REACT_APP_BASE_URL}/orders/${orderData.id}">View Order Details</a></p>
+      `;
+    }
 
-  return sendTransactionalEmail({
-    email,
-    subject: `Order Status Update - Order #${orderData.id.slice(0, 8).toUpperCase()}`,
-    htmlContent
-  });
+    return sendTransactionalEmail({
+      email,
+      subject: `Order Status Update - Order #${orderData.id.slice(0, 8).toUpperCase()}`,
+      htmlContent
+    });
+  } catch (error) {
+    console.error('Error sending order status email:', error);
+    return { success: false, error: error.message };
+  }
 };
 
 /**

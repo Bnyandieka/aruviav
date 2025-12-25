@@ -17,6 +17,7 @@ import { doc, getDoc, collection, query, where, getDocs, limit } from 'firebase/
 import { db } from '../services/firebase/config';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { useNotifications } from '../context/NotificationContext';
 import ProductCard from '../components/products/ProductCard/ProductCard';
 
 const ProductDetailsPage = () => {
@@ -24,6 +25,7 @@ const ProductDetailsPage = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { addToCart } = useCart();
+  const { addNotification } = useNotifications();
   
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -93,7 +95,11 @@ const ProductDetailsPage = () => {
   // Handle wishlist toggle
   const handleWishlistToggle = () => {
     if (!isAuthenticated) {
-      alert('Please login to add items to wishlist');
+      addNotification({
+        type: 'warning',
+        title: 'Login Required',
+        message: 'Please login to add items to wishlist',
+      });
       return;
     }
     setIsWishlisted(!isWishlisted);
@@ -103,14 +109,22 @@ const ProductDetailsPage = () => {
   // Handle add to cart
   const handleAddToCart = () => {
     if (product.stock === 0) {
-      alert('Product is out of stock');
+      addNotification({
+        type: 'error',
+        title: 'Out of Stock',
+        message: 'Product is out of stock',
+      });
       return;
     }
     // Add the product to cart with the selected quantity
     for (let i = 0; i < quantity; i++) {
       addToCart(product);
     }
-    alert(`Added ${quantity} ${product.name} to cart!`);
+    addNotification({
+      type: 'success',
+      title: 'Added to Cart',
+      message: `Added ${quantity} ${product.name} to cart!`,
+    });
   };
 
   // Handle share
@@ -124,7 +138,11 @@ const ProductDetailsPage = () => {
         });
       } else {
         navigator.clipboard.writeText(window.location.href);
-        alert('Link copied to clipboard!');
+        addNotification({
+          type: 'success',
+          title: 'Copied',
+          message: 'Link copied to clipboard!',
+        });
       }
     } catch (error) {
       console.error('Error sharing:', error);

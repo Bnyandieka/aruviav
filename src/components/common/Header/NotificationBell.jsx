@@ -12,6 +12,7 @@ const NotificationBell = () => {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [orderNotifications, setOrderNotifications] = useState([]);
+  const [readNotifications, setReadNotifications] = useState(new Set());
   const [unreadCount, setUnreadCount] = useState(0);
   const previousOrdersRef = useRef({});
 
@@ -29,7 +30,6 @@ const NotificationBell = () => {
       const q = query(
         ordersRef,
         where('userId', '==', user.uid),
-        orderBy('createdAt', 'desc'),
         limit(10)
       );
 
@@ -64,11 +64,22 @@ const NotificationBell = () => {
         });
 
         console.log('Total orders loaded:', orders.length);
+        
+        // Sort by createdAt on client side
+        orders.sort((a, b) => {
+          const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt) || new Date(0);
+          const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt) || new Date(0);
+          return dateB - dateA;
+        });
+        
         // Update the reference with current orders
         previousOrdersRef.current = currentOrders;
         
         setOrderNotifications(orders);
-        setUnreadCount(orders.length);
+        
+        // Calculate unread count (new orders not yet read)
+        const unread = orders.filter(order => !readNotifications.has(order.id)).length;
+        setUnreadCount(unread);
       });
 
       return () => unsubscribe();
@@ -103,6 +114,23 @@ const NotificationBell = () => {
         draggable: true,
       }
     );
+  };
+
+  const markAsRead = (orderId) => {
+    setReadNotifications(prev => {
+      const updated = new Set(prev);
+      updated.add(orderId);
+      // Recalculate unread count
+      const unread = orderNotifications.filter(order => !updated.has(order.id)).length;
+      setUnreadCount(unread);
+      return updated;
+    });
+  };
+
+  const markAllAsRead = () => {
+    const allOrderIds = new Set(orderNotifications.map(order => order.id));
+    setReadNotifications(allOrderIds);
+    setUnreadCount(0);
   };
 
   const getStatusIcon = (status) => {
@@ -184,13 +212,29 @@ const NotificationBell = () => {
         <div className="notification-dropdown absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto">
           {/* Header */}
           <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
-            <h3 className="font-bold text-gray-800">Notifications</h3>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <FiX size={20} />
-            </button>
+            <div>
+              <h3 className="font-bold text-gray-800">Notifications</h3>
+              {unreadCount > 0 && (
+                <p className="text-xs text-gray-500 mt-1">{unreadCount} unread</p>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {unreadCount > 0 && (
+                <button
+                  onClick={markAllAsRead}
+                  className="text-xs bg-orange-500 text-white px-2 py-1 rounded hover:bg-orange-600 transition"
+                  title="Mark all as read"
+                >
+                  ✓ All
+                </button>
+              )}
+              <button
+                onClick={() => setIsOpen(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <FiX size={20} />
+              </button>
+            </div>
           </div>
 
           {/* Notifications List */}
@@ -200,16 +244,24 @@ const NotificationBell = () => {
               orderNotifications.map((order) => (
                 <div
                   key={order.id}
-                  className="p-4 hover:bg-gray-50 transition border-l-4 border-orange-500"
+                  onClick={() => markAsRead(order.id)}
+                  className={`p-4 hover:bg-gray-50 transition border-l-4 border-orange-500 cursor-pointer ${
+                    readNotifications.has(order.id) ? 'opacity-60' : 'bg-blue-50'
+                  }`}
                 >
                   <div className="flex items-start gap-3">
                     <div className="flex-shrink-0 mt-1">
                       {getStatusIcon(order.status)}
                     </div>
                     <div className="flex-1">
-                      <p className="font-semibold text-gray-800">
-                        Order #{order.id.slice(0, 8).toUpperCase()}
-                      </p>
+                      <div className="flex items-start justify-between">
+                        <p className="font-semibold text-gray-800">
+                          Order #{order.id.slice(0, 8).toUpperCase()}
+                        </p>
+                        {!readNotifications.has(order.id) && (
+                          <span className="inline-block w-2 h-2 bg-orange-500 rounded-full mt-1.5"></span>
+                        )}
+                      </div>
                       <p className={`font-medium text-sm ${getStatusColor(order.status)}`}>
                         {order.status?.charAt(0).toUpperCase() + order.status?.slice(1).toLowerCase()}
                       </p>

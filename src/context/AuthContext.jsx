@@ -8,7 +8,8 @@ import {
   onAuthStateChanged,
   updateProfile,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  sendEmailVerification
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 // Import the already initialized Firebase instances
@@ -87,6 +88,8 @@ export const AuthProvider = ({ children }) => {
         photoURL: user.photoURL || null,
         isAdmin: false,
         verified: false,
+        emailVerified: false,
+        signupMethod: 'email', // Track that this is email signup (not social)
         role: 'customer',
         preferences: {
           emailNotifications: true,
@@ -115,7 +118,16 @@ export const AuthProvider = ({ children }) => {
       await setDoc(userDocRef, userData);
       setUserData(userData);
 
-      // Send account confirmation email
+      // Send email verification link
+      try {
+        await sendEmailVerification(user);
+        console.log('✅ Verification email sent to:', email);
+      } catch (verificationError) {
+        console.error('⚠️ Error sending verification email:', verificationError);
+        // Don't fail signup if email fails
+      }
+
+      // Send account confirmation email with Brevo
       try {
         await sendAccountConfirmationEmail(email, displayName);
         console.log('✅ Welcome email sent to:', email);
@@ -124,7 +136,7 @@ export const AuthProvider = ({ children }) => {
         // Don't fail signup if email fails
       }
 
-      return { success: true, user };
+      return { success: true, user, needsEmailVerification: true };
     } catch (error) {
       console.error('Signup error:', error);
       return { success: false, error: error.message };

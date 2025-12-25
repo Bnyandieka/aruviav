@@ -4,10 +4,12 @@ import { Link } from 'react-router-dom';
 import { FiHeart, FiShoppingCart, FiEye, FiStar } from 'react-icons/fi';
 import { useAuth } from '../../../context/AuthContext';
 import { useCart } from '../../../context/CartContext';
+import { useNotifications } from '../../../context/NotificationContext';
 
 const ProductCard = ({ product }) => {
   const { isAuthenticated } = useAuth();
   const { addToCart } = useCart();
+  const { addNotification } = useNotifications();
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
@@ -21,7 +23,11 @@ const ProductCard = ({ product }) => {
   const handleWishlistToggle = (e) => {
     e.preventDefault();
     if (!isAuthenticated) {
-      alert('Please login to add items to wishlist');
+      addNotification({
+        type: 'warning',
+        title: 'Login Required',
+        message: 'Please login to add items to wishlist'
+      });
       return;
     }
     setIsWishlisted(!isWishlisted);
@@ -32,7 +38,11 @@ const ProductCard = ({ product }) => {
   const handleAddToCart = (e) => {
     e.preventDefault();
     if (product.stock <= 0) {
-      alert('Product is out of stock');
+      addNotification({
+        type: 'error',
+        title: 'Out of Stock',
+        message: 'Product is out of stock'
+      });
       return;
     }
     

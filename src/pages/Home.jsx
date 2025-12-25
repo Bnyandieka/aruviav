@@ -12,6 +12,7 @@ import ProductCard from '../components/products/ProductCard/ProductCard';
 import SkeletonCard from '../components/common/Loader/Skeleton';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { useNotifications } from '../context/NotificationContext';
 import AuthModal from '../components/auth/AuthModal.jsx';
 import { toast } from 'react-toastify';
 
@@ -19,6 +20,7 @@ const Home = () => {
   const navigate = useNavigate();
   const { user, userData, isAuthenticated } = useAuth();
   const { cartCount } = useCart();
+  const { addNotification } = useNotifications();
   
   // State management
   const [featuredProducts, setFeaturedProducts] = useState([]);
@@ -227,7 +229,11 @@ const Home = () => {
             <p className="text-gray-300 mb-6">Get the latest updates on new products, exclusive deals, and special offers!</p>
             <form className="flex flex-col sm:flex-row gap-3" onSubmit={(e) => {
               e.preventDefault();
-              alert('Newsletter subscription coming soon!');
+              addNotification({
+                type: 'info',
+                title: 'Newsletter',
+                message: 'Newsletter subscription coming soon!',
+              });
             }}>
               <input
                 type="email"

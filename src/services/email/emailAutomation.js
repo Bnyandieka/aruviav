@@ -6,7 +6,9 @@ import {
   subscribeToNewsletter,
   sendOrderConfirmationEmail,
   sendOrderStatusEmail,
-  sendWelcomeEmail
+  sendWelcomeEmail,
+  getEmailTemplate,
+  replaceTemplateVariables
 } from './brevoService';
 import { toast } from 'react-toastify';
 
@@ -19,25 +21,41 @@ import { toast } from 'react-toastify';
  */
 export const sendAccountConfirmationEmail = async (email, displayName, confirmationLink = null) => {
   try {
-    const htmlContent = `
-      <h2>Welcome to Shopki, ${displayName}!</h2>
-      <p>Your account has been created successfully.</p>
-      ${confirmationLink ? `
-      <p>To verify your email address, click the button below:</p>
-      <a href="${confirmationLink}" style="background-color: #ff9800; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block; margin: 15px 0;">
-        Verify Email Address
-      </a>
-      <p style="color: #666; font-size: 12px;">This link expires in 24 hours.</p>
-      ` : `
-      <p>Your email has been verified. You can now enjoy all Shopki features.</p>
-      `}
-      <p>If you didn't create this account, please ignore this email.</p>
-      <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
-      <p style="color: #666; font-size: 12px;">
-        Shopki Team<br>
-        We're here to help at support@shopki.com
-      </p>
-    `;
+    // Fetch the 'welcome' email template from admin settings
+    const template = await getEmailTemplate('welcome');
+    
+    let htmlContent;
+    if (template && template.htmlContent) {
+      // Use admin-configured template with variable replacement
+      const variables = {
+        displayName: displayName || 'User',
+        email: email,
+        confirmationLink: confirmationLink || '',
+        currentYear: new Date().getFullYear()
+      };
+      htmlContent = replaceTemplateVariables(template.htmlContent, variables);
+    } else {
+      // Fallback to default template if admin template not configured
+      htmlContent = `
+        <h2>Welcome to Shopki, ${displayName}!</h2>
+        <p>Your account has been created successfully.</p>
+        ${confirmationLink ? `
+        <p>To verify your email address, click the button below:</p>
+        <a href="${confirmationLink}" style="background-color: #ff9800; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block; margin: 15px 0;">
+          Verify Email Address
+        </a>
+        <p style="color: #666; font-size: 12px;">This link expires in 24 hours.</p>
+        ` : `
+        <p>Your email has been verified. You can now enjoy all Shopki features.</p>
+        `}
+        <p>If you didn't create this account, please ignore this email.</p>
+        <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+        <p style="color: #666; font-size: 12px;">
+          Shopki Team<br>
+          We're here to help at support@shopki.com
+        </p>
+      `;
+    }
 
     const result = await sendTransactionalEmail({
       email,

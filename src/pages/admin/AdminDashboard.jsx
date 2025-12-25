@@ -1,17 +1,20 @@
 // src/pages/admin/AdminDashboard.jsx
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase/config';
 import { FiEdit2, FiTrash2, FiX, FiUpload, FiShoppingCart, FiBarChart2, FiCheck } from 'react-icons/fi';
 import { CATEGORIES } from '../../utils/constants';
+import { useNotifications } from '../../context/NotificationContext';
 import CategoryDropdown from '../../components/admin/CategoryDropdown';
 import FinanceAnalytics from '../../components/admin/FinanceAnalytics';
 import ProductImageUpload from '../../components/admin/Products/ProductImageUpload';
 import AdminSettings from '../../components/admin/AdminSettings/AdminSettings';
 import { updateOrderStatus } from '../../services/firebase/firestoreHelpers';
+import { sendOrderStatusUpdate } from '../../services/email/emailAutomation';
 import { toast } from 'react-toastify';
 
 const AdminDashboard = () => {
+  const { addNotification } = useNotifications();
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
@@ -157,12 +160,68 @@ const AdminDashboard = () => {
       
       setMembers(usersData);
 
-      // Fetch all orders
+      // Set up real-time listener for orders
       const ordersRef = collection(db, 'orders');
+      const unsubscribeOrders = onSnapshot(ordersRef, async (ordersSnap) => {
+        const ordersData = await Promise.all(ordersSnap.docs.map(async (doc) => {
+          let orderData = {
+            id: doc.id,
+            ...doc.data()
+          };
+          
+          // If order doesn't have userName/userEmail, fetch from users collection
+          if ((!orderData.userName || !orderData.userEmail) && orderData.userId) {
+            try {
+              const userRef = doc(db, 'users', orderData.userId);
+              const userSnap = await getDoc(userRef);
+              if (userSnap.exists()) {
+                const userData = userSnap.data();
+                orderData.userName = orderData.userName || userData.displayName || 'N/A';
+                orderData.userEmail = orderData.userEmail || userData.email || 'N/A';
+              }
+            } catch (err) {
+              console.warn(`Could not fetch user data for order ${doc.id}:`, err.message);
+            }
+          }
+          
+          return orderData;
+        }));
+        
+        // Sort orders by date descending
+        ordersData.sort((a, b) => {
+          const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt) || new Date(0);
+          const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt) || new Date(0);
+          return dateB - dateA;
+        });
+        
+        setOrders(ordersData);
+        console.log('📊 Orders updated in real-time:', ordersData.length);
+      });
+
+      // Fetch all orders once (for initial data)
       const ordersSnap = await getDocs(ordersRef);
-      const ordersData = ordersSnap.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
+      const ordersData = await Promise.all(ordersSnap.docs.map(async (doc) => {
+        let orderData = {
+          id: doc.id,
+          ...doc.data()
+        };
+        
+        // If order doesn't have userName/userEmail, fetch from users collection
+        if ((!orderData.userName || !orderData.userEmail) && orderData.userId) {
+          try {
+            const userRef = doc(db, 'users', orderData.userId);
+            const userSnap = await getDoc(userRef);
+            if (userSnap.exists()) {
+              const userData = userSnap.data();
+              orderData.userName = orderData.userName || userData.displayName || 'N/A';
+              orderData.userEmail = orderData.userEmail || userData.email || 'N/A';
+            }
+          } catch (err) {
+            console.warn(`Could not fetch user data for order ${doc.id}:`, err.message);
+          }
+        }
+        
+        return orderData;
       }));
       
       // Sort orders by date descending
@@ -173,9 +232,16 @@ const AdminDashboard = () => {
       });
       
       setOrders(ordersData);
+      
+      // Return cleanup function to unsubscribe
+      return unsubscribeOrders;
     } catch (error) {
       console.error('Error fetching data:', error);
-      alert('Error loading data: ' + error.message);
+      addNotification({
+        type: 'error',
+        title: 'Error',
+        message: 'Error loading data: ' + error.message
+      });
     } finally {
       setLoading(false);
     }
@@ -241,7 +307,11 @@ const AdminDashboard = () => {
     
     // Validation
     if (!formData.name || !formData.price || !formData.stock) {
-      alert('Please fill in all required fields (Name, Price, Stock)');
+      addNotification({
+        type: 'warning',
+        title: 'Validation Error',
+        message: 'Please fill in all required fields (Name, Price, Stock)'
+      });
       return;
     }
 
@@ -270,19 +340,31 @@ const AdminDashboard = () => {
         // Update existing product
         const productRef = doc(db, 'products', editingProduct.id);
         await updateDoc(productRef, productData);
-        alert('Product updated successfully!');
+        addNotification({
+          type: 'success',
+          title: 'Success',
+          message: 'Product updated successfully!'
+        });
       } else {
         // Add new product
         productData.createdAt = new Date().toISOString();
         await addDoc(collection(db, 'products'), productData);
-        alert('Product added successfully!');
+        addNotification({
+          type: 'success',
+          title: 'Success',
+          message: 'Product added successfully!'
+        });
       }
 
       resetForm();
       fetchData();
     } catch (error) {
       console.error('Error saving product:', error);
-      alert('Error saving product: ' + error.message);
+      addNotification({
+        type: 'error',
+        title: 'Error',
+        message: 'Error saving product: ' + error.message
+      });
     } finally {
       setLoading(false);
     }
@@ -293,6 +375,19 @@ const AdminDashboard = () => {
     const result = await updateOrderStatus(orderId, newStatus);
     
     if (result.success) {
+      // Find the order to get customer email
+      const order = orders.find(o => o.id === orderId);
+      
+      // Send order status email to customer
+      if (order && order.userEmail) {
+        const emailData = {
+          id: orderId,
+          status: newStatus,
+          trackingNumber: order.trackingNumber || null
+        };
+        await sendOrderStatusUpdate(order.userEmail, emailData);
+      }
+      
       setOrders(orders.map(order => 
         order.id === orderId ? { ...order, status: newStatus } : order
       ));
@@ -377,11 +472,19 @@ const AdminDashboard = () => {
     setLoading(true);
     try {
       await deleteDoc(doc(db, 'products', productId));
-      alert('Product deleted successfully!');
+      addNotification({
+        type: 'success',
+        title: 'Success',
+        message: 'Product deleted successfully!'
+      });
       fetchData();
     } catch (error) {
       console.error('Error deleting product:', error);
-      alert('Error deleting product: ' + error.message);
+      addNotification({
+        type: 'error',
+        title: 'Error',
+        message: 'Error deleting product: ' + error.message
+      });
     } finally {
       setLoading(false);
     }
@@ -1057,11 +1160,14 @@ const AdminDashboard = () => {
                         <td className="py-4 px-4 text-sm">{order.userEmail || 'N/A'}</td>
                         <td className="py-4 px-4 text-sm">
                           {order.createdAt
-                            ? new Date(order.createdAt).toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric'
-                              })
+                            ? (() => {
+                                const date = order.createdAt?.toDate?.() || new Date(order.createdAt);
+                                return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                });
+                              })()
                             : 'N/A'}
                         </td>
                         <td className="py-4 px-4 text-sm">{order.items?.length || 0}</td>

@@ -12,7 +12,9 @@ import {
   sendEmailVerification,
   updatePassword,
   reauthenticateWithCredential,
-  EmailAuthProvider
+  EmailAuthProvider,
+  confirmPasswordReset,
+  verifyPasswordResetCode
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from './config';
@@ -227,6 +229,46 @@ export const sendVerificationEmail = async () => {
   }
 };
 
+// Verify password reset code
+export const verifyResetCode = async (code) => {
+  try {
+    const email = await verifyPasswordResetCode(auth, code);
+    return { email, error: null };
+  } catch (error) {
+    console.error('Error verifying reset code:', error);
+    let errorMessage = 'Failed to verify reset code';
+    
+    if (error.code === 'auth/expired-action-code') {
+      errorMessage = 'Password reset link has expired. Please request a new one.';
+    } else if (error.code === 'auth/invalid-action-code') {
+      errorMessage = 'Invalid reset link. Please request a new password reset.';
+    }
+    
+    return { email: null, error: errorMessage };
+  }
+};
+
+// Confirm password reset with code
+export const confirmReset = async (code, newPassword) => {
+  try {
+    await confirmPasswordReset(auth, code, newPassword);
+    return { error: null };
+  } catch (error) {
+    console.error('Error confirming password reset:', error);
+    let errorMessage = 'Failed to reset password';
+    
+    if (error.code === 'auth/expired-action-code') {
+      errorMessage = 'Password reset link has expired. Please request a new one.';
+    } else if (error.code === 'auth/invalid-action-code') {
+      errorMessage = 'Invalid reset link. Please request a new password reset.';
+    } else if (error.code === 'auth/weak-password') {
+      errorMessage = 'Password is too weak. Please choose a stronger password.';
+    }
+    
+    return { error: errorMessage };
+  }
+};
+
 export default {
   signUpWithEmail,
   signInWithEmail,
@@ -238,4 +280,6 @@ export default {
   getUserData,
   onAuthStateChange,
   sendVerificationEmail,
+  verifyResetCode,
+  confirmReset,
 };

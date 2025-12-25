@@ -2,67 +2,100 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FiArrowRight, FiPackage, FiCheck, FiClock, FiEdit2 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { useNotifications } from '../context/NotificationContext';
+import { collection, query, where, getDocs, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../services/firebase/config';
 import Loader from '../components/common/Loader/Spinner';
 import { updateOrderStatus } from '../services/firebase/firestoreHelpers';
 
 export const OrdersPage = () => {
   const { user, isAdmin } = useAuth();
+  const { addNotification } = useNotifications();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [updatingOrder, setUpdatingOrder] = useState(null);
   const [updateMessage, setUpdateMessage] = useState(null);
+  const [previousOrderStatuses, setPreviousOrderStatuses] = useState({});
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      if (!user?.uid) {
-        setLoading(false);
-        return;
-      }
+    if (!user?.uid) {
+      setLoading(false);
+      return;
+    }
 
-      try {
-        setLoading(true);
+    setLoading(true);
+    
+    // Set up real-time listener for orders
+    const ordersRef = collection(db, 'orders');
+    const q = query(
+      ordersRef,
+      where('userId', '==', user.uid)
+    );
+    
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const userOrders = [];
+      const statusUpdates = {};
+      
+      querySnapshot.forEach((doc) => {
+        const orderData = {
+          id: doc.id,
+          ...doc.data()
+        };
+        userOrders.push(orderData);
         
-        // Query orders for the current user
-        const ordersRef = collection(db, 'orders');
-        // Use only 'where' clause first without orderBy to avoid index requirements
-        const q = query(
-          ordersRef,
-          where('userId', '==', user.uid)
-        );
+        // Check if status changed from previous state
+        const orderId = doc.id;
+        const currentStatus = orderData.status;
+        const previousStatus = previousOrderStatuses[orderId];
         
-        const querySnapshot = await getDocs(q);
-        const userOrders = [];
-        
-        querySnapshot.forEach((doc) => {
-          userOrders.push({
-            id: doc.id,
-            ...doc.data()
-          });
-        });
-        
-        // Sort on client side instead of using Firestore orderBy
-        userOrders.sort((a, b) => {
-          const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt) || new Date(0);
-          const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt) || new Date(0);
-          return dateB - dateA;
-        });
-        
-        setOrders(userOrders);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching orders:', err);
-        setError(`Failed to load orders: ${err.message}`);
-        setOrders([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+        if (previousStatus && previousStatus !== currentStatus) {
+          statusUpdates[orderId] = currentStatus;
+          
+          // Show notification for status change
+          const statusMessages = {
+            pending: '⏳ Your order is pending',
+            processing: '📦 Your order is being processed',
+            shipped: '🚚 Your order has been shipped!',
+            completed: '✅ Your order has been delivered',
+            cancelled: '❌ Your order has been cancelled',
+            returned: '↩️ Your order has been returned'
+          };
+          
+          addNotification(
+            statusMessages[currentStatus] || `Order status updated to ${currentStatus}`,
+            'info'
+          );
+        }
+      });
+      
+      // Sort on client side
+      userOrders.sort((a, b) => {
+        const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt) || new Date(0);
+        const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt) || new Date(0);
+        return dateB - dateA;
+      });
+      
+      // Update order statuses map for next comparison
+      const newStatusMap = {};
+      userOrders.forEach(order => {
+        newStatusMap[order.id] = order.status;
+      });
+      setPreviousOrderStatuses(newStatusMap);
+      
+      setOrders(userOrders);
+      setError(null);
+      setLoading(false);
+    }, (error) => {
+      console.error('Error fetching orders:', error);
+      setError(`Failed to load orders: ${error.message}`);
+      setOrders([]);
+      setLoading(false);
+    });
 
-    fetchOrders();
-  }, [user?.uid]);
+    // Cleanup listener on unmount
+    return () => unsubscribe();
+  }, [user?.uid, addNotification]);
 
   const handleStatusUpdate = async (orderId, newStatus) => {
     setUpdatingOrder(orderId);

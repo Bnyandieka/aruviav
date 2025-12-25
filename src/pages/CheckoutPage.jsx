@@ -136,6 +136,8 @@ const CheckoutPage = () => {
     try {
       const orderData = {
         userId: user.uid,
+        userEmail: user.email,
+        userName: user.displayName || 'Customer',
         items: cartItems,
         shippingInfo,
         paymentMethod,

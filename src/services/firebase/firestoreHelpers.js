@@ -403,8 +403,24 @@ export const updateOrderStatus = async (orderId, status) => {
       return { success: false, error: 'Order not found' };
     }
     
-    const orderData = orderSnap.data();
+    let orderData = orderSnap.data();
     console.log('✅ Order found:', { userEmail: orderData.userEmail, userName: orderData.userName });
+    
+    // If email is not in order, fetch from user document
+    if (!orderData.userEmail && orderData.userId) {
+      try {
+        const userRef = doc(db, 'users', orderData.userId);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          const userData = userSnap.data();
+          orderData.userEmail = userData.email;
+          orderData.userName = userData.displayName || 'Customer';
+          console.log(`✅ Fetched user email from users collection: ${orderData.userEmail}`);
+        }
+      } catch (err) {
+        console.warn('⚠️ Could not fetch user data:', err.message);
+      }
+    }
     
     // Update the order status in Firestore
     await updateDoc(docRef, {
