@@ -98,6 +98,8 @@
 - [ ] Phone auth: **Enabled** ✅
 - [ ] reCAPTCHA: **Enabled** ✅
 - [ ] User created in Firebase ✅
+reCAPTCHA verification failed. Please refresh and try again.
+
 
 **Status:** ✅ Everything verified
 

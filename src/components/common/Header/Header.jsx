@@ -1,6 +1,6 @@
 // Location: src/components/common/Header/Header.jsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   FiShoppingCart, 
@@ -14,6 +14,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { useCart } from '../../../context/CartContext';
 import { useLogoSettings } from '../../../hooks/useLogoSettings';
 import { signOutUser } from '../../../services/firebase/auth';
+import { getProducts } from '../../../services/firebase/firestoreHelpers';
 import { CATEGORIES } from '../../../utils/constants';
 import NotificationBell from './NotificationBell';
 import './Header.css';
@@ -24,15 +25,58 @@ const Header = () => {
   const { logo } = useLogoSettings();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchSuggestions, setSearchSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [allProducts, setAllProducts] = useState([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  // Fetch all products on mount
+  useEffect(() => {
+    const fetchProducts = async () => {
+      const { products } = await getProducts();
+      if (products) setAllProducts(products);
+    };
+    fetchProducts();
+  }, []);
+
+  // Real-time search suggestions
+  useEffect(() => {
+    if (searchQuery.trim().length > 0) {
+      const term = searchQuery.toLowerCase();
+      const filtered = allProducts
+        .filter(product =>
+          product.name?.toLowerCase().includes(term) ||
+          product.description?.toLowerCase().includes(term)
+        )
+        .slice(0, 8); // Show top 8 results
+      setSearchSuggestions(filtered);
+      setShowSuggestions(true);
+    } else {
+      setSearchSuggestions([]);
+      setShowSuggestions(false);
+    }
+  }, [searchQuery, allProducts]);
 
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/products?search=${searchQuery}`);
       setSearchQuery('');
+      setShowSuggestions(false);
     }
+  };
+
+  const handleSuggestionClick = (productName) => {
+    navigate(`/products?search=${encodeURIComponent(productName)}`);
+    setSearchQuery('');
+    setShowSuggestions(false);
+  };
+
+  const handleCategoryClick = (categoryId) => {
+    navigate(`/products?category=${categoryId}`, { replace: true });
+    // Smooth scroll to top
+    setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 0);
   };
 
   const handleSignOut = async () => {
@@ -42,18 +86,6 @@ const Header = () => {
 
   return (
     <header className="header sticky top-0 z-40 bg-white">
-      {/* Top Bar */}
-      <div className="top-bar bg-orange-500 text-white py-1 sm:py-2 text-xs sm:text-sm">
-        <div className="container mx-auto px-3 sm:px-4 flex justify-between items-center gap-2">
-          <div className="hidden sm:block">Free shipping on all orders</div>
-          <div className="text-xs sm:text-sm">Free shipping</div>
-          <div className="flex gap-2 sm:gap-4 text-xs sm:text-sm">
-            <Link to="/help" className="hover:underline">Help</Link>
-            <Link to="/contact" className="hover:underline">Contact</Link>
-          </div>
-        </div>
-      </div>
-
       {/* Main Header */}
       <div className="main-header bg-white shadow">
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
@@ -64,21 +96,54 @@ const Header = () => {
             </Link>
 
             {/* Search Bar - Hidden on small screens */}
-            <form onSubmit={handleSearch} className="search-form flex-1 max-w-2xl hidden md:flex">
-              <input
-                type="text"
-                placeholder="Search for products, brands and categories..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="search-input flex-1 px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-l-lg focus:outline-none focus:border-orange-500"
-              />
-              <button
-                type="submit"
-                className="search-button bg-orange-500 text-white px-4 sm:px-6 py-2 rounded-r-lg hover:bg-orange-600 transition"
-              >
-                <FiSearch size={20} />
-              </button>
-            </form>
+            <div className="search-form flex-1 max-w-2xl hidden md:flex relative">
+              <form onSubmit={handleSearch} className="flex w-full">
+                <input
+                  type="text"
+                  placeholder="Search for products, brands and categories..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => searchQuery.trim() && setShowSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                  className="search-input flex-1 px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-l-lg focus:outline-none focus:border-orange-500"
+                />
+                <button
+                  type="submit"
+                  className="search-button bg-orange-500 text-white px-4 sm:px-6 py-2 rounded-r-lg hover:bg-orange-600 transition"
+                >
+                  <FiSearch size={20} />
+                </button>
+              </form>
+
+              {/* Search Suggestions Dropdown */}
+              {showSuggestions && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-50 overflow-y-auto" style={{ maxHeight: '120px' }}>
+                  {searchSuggestions.length > 0 ? (
+                    searchSuggestions.slice(0, 3).map((product) => (
+                      <div
+                        key={product.id}
+                        onClick={() => handleSuggestionClick(product.name)}
+                        className="px-3 py-1 hover:bg-orange-50 cursor-pointer border-b last:border-b-0 flex items-center gap-2"
+                      >
+                        <img
+                          src={product.images?.[0] || 'https://via.placeholder.com/40'}
+                          alt={product.name}
+                          className="w-5 h-5 object-cover rounded flex-shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-gray-900 truncate">{product.name}</p>
+                          <p className="text-xs text-orange-500">KSh {product.price?.toLocaleString()}</p>
+                        </div>
+                      </div>
+                    ))
+                  ) : searchQuery.trim() ? (
+                    <div className="px-3 py-2 text-center">
+                      <p className="text-gray-600 text-xs font-medium">No products found</p>
+                    </div>
+                  ) : null}
+                </div>
+              )}
+            </div>
 
             {/* Icons */}
             <div className="flex items-center gap-2 sm:gap-4">
@@ -226,48 +291,49 @@ const Header = () => {
       </div>
 
       {/* Navigation */}
-      <nav className="nav-bar bg-gray-100 hidden md:block overflow-x-auto">
+      <nav className="nav-bar bg-gray-100 hidden md:block overflow-visible relative z-40">
         <div className="container mx-auto px-3 sm:px-4">
-          <ul className="flex gap-2 sm:gap-6 py-2 sm:py-3 text-sm sm:text-base whitespace-nowrap md:whitespace-normal">
+          <ul className="flex gap-2 sm:gap-6 py-2 sm:py-3 text-sm sm:text-base whitespace-nowrap md:whitespace-normal overflow-x-auto md:overflow-x-visible">
             <li>
-              <Link to="/products?category=electronics" className="hover:text-orange-500 inline-block py-1">
+              <button type="button" onClick={() => handleCategoryClick('electronics')} className="hover:text-orange-500 inline-block py-1 pointer-events-auto bg-none border-none cursor-pointer font-inherit text-inherit">
                 Electronics
-              </Link>
+              </button>
             </li>
             <li>
-              <Link to="/products?category=fashion-apparel" className="hover:text-orange-500 inline-block py-1">
+              <button type="button" onClick={() => handleCategoryClick('fashion-apparel')} className="hover:text-orange-500 inline-block py-1 pointer-events-auto bg-none border-none cursor-pointer font-inherit text-inherit">
                 Fashion & Apparel
-              </Link>
+              </button>
             </li>
             <li>
-              <Link to="/products?category=home-garden" className="hover:text-orange-500 inline-block py-1">
+              <button type="button" onClick={() => handleCategoryClick('home-garden')} className="hover:text-orange-500 inline-block py-1 pointer-events-auto bg-none border-none cursor-pointer font-inherit text-inherit">
                 Home & Garden
-              </Link>
+              </button>
             </li>
             <li>
-              <Link to="/products?category=sports-outdoors" className="hover:text-orange-500 inline-block py-1">
+              <button type="button" onClick={() => handleCategoryClick('sports-outdoors')} className="hover:text-orange-500 inline-block py-1 pointer-events-auto bg-none border-none cursor-pointer font-inherit text-inherit">
                 Sports & Outdoors
-              </Link>
+              </button>
             </li>
             <li>
-              <Link to="/products?category=health-beauty" className="hover:text-orange-500 inline-block py-1">
+              <button type="button" onClick={() => handleCategoryClick('health-beauty')} className="hover:text-orange-500 inline-block py-1 pointer-events-auto bg-none border-none cursor-pointer font-inherit text-inherit">
                 Health & Beauty
-              </Link>
+              </button>
             </li>
             <li className="relative group">
-              <button className="hover:text-orange-500 flex items-center gap-1 py-1">
+              <button type="button" className="hover:text-orange-500 flex items-center gap-1 py-1 pointer-events-auto bg-none border-none cursor-pointer font-inherit text-inherit">
                 More Categories ▼
               </button>
-              <div className="absolute left-0 mt-0 w-40 sm:w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+              <div className="absolute left-0 mt-0 w-40 sm:w-48 bg-white rounded-md shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 top-full pointer-events-none group-hover:pointer-events-auto overflow-y-auto" style={{ maxHeight: '300px' }}>
                 {CATEGORIES.slice(5).map((category) => (
-                  <Link
+                  <button
                     key={category.id}
-                    to={`/products?category=${category.id}`}
-                    className="block px-3 sm:px-4 py-2 text-gray-700 hover:bg-orange-500 hover:text-white first:rounded-t-md last:rounded-b-md text-sm"
+                    type="button"
+                    onClick={() => handleCategoryClick(category.id)}
+                    className="w-full text-left block px-3 sm:px-4 py-2 text-gray-700 hover:bg-orange-500 hover:text-white first:rounded-t-md last:rounded-b-md text-sm bg-none border-none cursor-pointer"
                   >
                     {category.name}
-                  </Link>
-                ))}
+                  </button>
+                ))}}
               </div>
             </li>
           </ul>

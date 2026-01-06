@@ -14,7 +14,8 @@ const TEMPLATE_LABELS = {
   orderCompleted: [<FiCheckCircle key="icon" size={16} />, ' Order Completed'],
   orderCancelled: [<FiXCircle key="icon" size={16} />, ' Order Cancelled'],
   orderReturned: [<FiRotateCcw key="icon" size={16} />, ' Order Returned'],
-  newsletter: [<FiMail key="icon" size={16} />, ' Newsletter']
+  newsletter: [<FiMail key="icon" size={16} />, ' Newsletter'],
+  contactFormConfirmation: [<FiMail key="icon" size={16} />, ' Contact Form Response']
 };
 
 const TEMPLATE_VARIABLES = {
@@ -83,6 +84,14 @@ const TEMPLATE_VARIABLES = {
     { label: 'Display Name', variable: '{{displayName}}' },
     { label: 'Email', variable: '{{email}}' },
     { label: 'Unsubscribe Link', variable: '{{unsubscribeLink}}' },
+    { label: 'Current Year', variable: '{{currentYear}}' }
+  ],
+  contactFormConfirmation: [
+    { label: 'Customer Name', variable: '{{name}}' },
+    { label: 'Customer Email', variable: '{{email}}' },
+    { label: 'Message Subject', variable: '{{subject}}' },
+    { label: 'Message', variable: '{{message}}' },
+    { label: 'Phone', variable: '{{phone}}' },
     { label: 'Current Year', variable: '{{currentYear}}' }
   ]
 };

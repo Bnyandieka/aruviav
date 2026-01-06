@@ -356,12 +356,12 @@ const CheckoutPage = () => {
 
             {/* Step 2: Payment Method */}
             {currentStep === 2 && (
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-2xl font-bold mb-6">Payment Method</h2>
+              <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+                <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Payment Method</h2>
 
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {/* M-Pesa */}
-                  <label className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition ${
+                  <label className={`flex items-center p-3 sm:p-4 border-2 rounded-lg cursor-pointer transition ${
                     paymentMethod === 'mpesa' ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-orange-500'
                   }`}>
                     <input
@@ -370,18 +370,18 @@ const CheckoutPage = () => {
                       value="mpesa"
                       checked={paymentMethod === 'mpesa'}
                       onChange={(e) => setPaymentMethod(e.target.value)}
-                      className="mr-4"
+                      className="w-4 h-4 mr-3 sm:mr-4 flex-shrink-0 cursor-pointer"
                     />
-                    <FiPhone className="text-green-600 text-2xl mr-3" />
+                    <FiPhone className="text-green-600 text-xl sm:text-2xl mr-2 sm:mr-3 flex-shrink-0" />
                     <div className="flex-1">
-                      <div className="font-semibold">M-Pesa 🚀 Recommended</div>
-                      <div className="text-sm text-gray-600">Fast & Secure - Instant payment via M-Pesa STK Push</div>
+                      <div className="font-semibold text-sm sm:text-base">M-Pesa 🚀 Recommended</div>
+                      <div className="text-xs sm:text-sm text-gray-600">Fast & Secure - Instant payment via M-Pesa STK Push</div>
                       <div className="text-xs text-green-600 mt-1">✓ Instant STK prompt to your phone</div>
                     </div>
                   </label>
 
                   {/* Card Payment */}
-                  <label className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition ${
+                  <label className={`flex items-center p-3 sm:p-4 border-2 rounded-lg cursor-pointer transition ${
                     paymentMethod === 'card' ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-orange-500'
                   }`}>
                     <input
@@ -390,17 +390,17 @@ const CheckoutPage = () => {
                       value="card"
                       checked={paymentMethod === 'card'}
                       onChange={(e) => setPaymentMethod(e.target.value)}
-                      className="mr-4"
+                      className="w-4 h-4 mr-3 sm:mr-4 flex-shrink-0 cursor-pointer"
                     />
-                    <FiCreditCard className="text-blue-600 text-2xl mr-3" />
+                    <FiCreditCard className="text-blue-600 text-xl sm:text-2xl mr-2 sm:mr-3 flex-shrink-0" />
                     <div className="flex-1">
-                      <div className="font-semibold">Credit/Debit Card</div>
-                      <div className="text-sm text-gray-600">Pay securely with your card</div>
+                      <div className="font-semibold text-sm sm:text-base">Credit/Debit Card</div>
+                      <div className="text-xs sm:text-sm text-gray-600">Pay securely with your card</div>
                     </div>
                   </label>
 
                   {/* Cash on Delivery */}
-                  <label className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition ${
+                  <label className={`flex items-center p-3 sm:p-4 border-2 rounded-lg cursor-pointer transition ${
                     paymentMethod === 'cod' ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-orange-500'
                   }`}>
                     <input
@@ -409,21 +409,21 @@ const CheckoutPage = () => {
                       value="cod"
                       checked={paymentMethod === 'cod'}
                       onChange={(e) => setPaymentMethod(e.target.value)}
-                      className="mr-4"
+                      className="w-4 h-4 mr-3 sm:mr-4 flex-shrink-0 cursor-pointer"
                     />
-                    <span className="text-2xl mr-3">💵</span>
+                    <span className="text-xl sm:text-2xl mr-2 sm:mr-3 flex-shrink-0">💵</span>
                     <div className="flex-1">
-                      <div className="font-semibold">Cash on Delivery</div>
-                      <div className="text-sm text-gray-600">Pay when you receive your order</div>
+                      <div className="font-semibold text-sm sm:text-base">Cash on Delivery</div>
+                      <div className="text-xs sm:text-sm text-gray-600">Pay when you receive your order</div>
                     </div>
                   </label>
                 </div>
 
                 {/* M-Pesa Info Box */}
                 {paymentMethod === 'mpesa' && (
-                  <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                    <h4 className="font-semibold text-green-900 mb-2">📱 How M-Pesa Payment Works:</h4>
-                    <ul className="text-sm text-green-800 space-y-1 list-disc list-inside">
+                  <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <h4 className="font-semibold text-green-900 mb-2 text-sm sm:text-base">📱 How M-Pesa Payment Works:</h4>
+                    <ul className="text-xs sm:text-sm text-green-800 space-y-1 list-disc list-inside">
                       <li>Click "Place Order" to proceed</li>
                       <li>You'll receive an M-Pesa STK prompt on <strong>{shippingInfo.phone}</strong></li>
                       <li>Enter your M-Pesa PIN to complete payment</li>
@@ -433,16 +433,16 @@ const CheckoutPage = () => {
                   </div>
                 )}
 
-                <div className="flex gap-4 mt-6">
+                <div className="flex gap-2 sm:gap-4 mt-4 sm:mt-6">
                   <button
                     onClick={() => setCurrentStep(1)}
-                    className="flex-1 border-2 border-gray-300 py-3 rounded-lg font-semibold hover:border-orange-500 transition"
+                    className="flex-1 border-2 border-gray-300 py-2 sm:py-3 rounded-lg font-semibold text-sm sm:text-base hover:border-orange-500 transition"
                   >
                     Back
                   </button>
                   <button
                     onClick={() => setCurrentStep(3)}
-                    className="flex-1 bg-orange-500 text-white py-3 rounded-lg font-semibold hover:bg-orange-600 transition"
+                    className="flex-1 bg-orange-500 text-white py-2 sm:py-3 rounded-lg font-semibold text-sm sm:text-base hover:bg-orange-600 transition"
                   >
                     Review Order
                   </button>

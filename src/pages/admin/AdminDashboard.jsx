@@ -499,14 +499,14 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="container mx-auto px-4">
+    <div className="min-h-screen bg-gray-50 py-4 sm:py-6 md:py-8">
+      <div className="container mx-auto px-2 sm:px-4">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex justify-between items-center">
+        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-              <p className="text-gray-600 mt-1">Manage your products and inventory</p>
+              <h1 className="text-2xl sm:text-3xl font-bold">Admin Dashboard</h1>
+              <p className="text-gray-600 mt-1 text-sm sm:text-base">Manage your products and inventory</p>
             </div>
             <button
               onClick={() => {
@@ -516,7 +516,7 @@ const AdminDashboard = () => {
                   setShowForm(true);
                 }
               }}
-              className={`px-6 py-3 rounded-lg font-semibold transition ${
+              className={`w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold transition text-sm sm:text-base ${
                 showForm
                   ? 'bg-gray-500 text-white hover:bg-gray-600'
                   : 'bg-orange-500 text-white hover:bg-orange-600'
@@ -528,125 +528,125 @@ const AdminDashboard = () => {
         </div>
 
         {/* Tabs */}
-        <div className="bg-white rounded-lg shadow-md mb-6 border-b">
-          <div className="flex overflow-x-auto">
+        <div className="bg-white rounded-lg shadow-md mb-4 sm:mb-6 border-b overflow-x-auto">
+          <div className="flex min-w-max sm:min-w-full">
             <button
               onClick={() => {
                 setActiveTab('products');
                 setShowForm(false);
               }}
-              className={`flex-1 py-4 px-6 font-semibold flex items-center justify-center gap-2 border-b-2 transition whitespace-nowrap ${
+              className={`py-2 sm:py-4 px-2 sm:px-6 font-semibold text-xs sm:text-base flex items-center justify-center gap-1 sm:gap-2 border-b-2 transition whitespace-nowrap flex-1 sm:flex-none ${
                 activeTab === 'products'
                   ? 'border-orange-500 text-orange-600'
                   : 'border-transparent text-gray-600 hover:text-gray-900'
               }`}
             >
-              📦 Products
+              📦 <span className="hidden sm:inline">Products</span>
             </button>
             <button
               onClick={() => setActiveTab('orders')}
-              className={`flex-1 py-4 px-6 font-semibold flex items-center justify-center gap-2 border-b-2 transition whitespace-nowrap ${
+              className={`py-2 sm:py-4 px-2 sm:px-6 font-semibold text-xs sm:text-base flex items-center justify-center gap-1 sm:gap-2 border-b-2 transition whitespace-nowrap flex-1 sm:flex-none ${
                 activeTab === 'orders'
                   ? 'border-orange-500 text-orange-600'
                   : 'border-transparent text-gray-600 hover:text-gray-900'
               }`}
             >
-              <FiShoppingCart /> Orders
+              <FiShoppingCart /> <span className="hidden sm:inline">Orders</span>
             </button>
             <button
               onClick={() => setActiveTab('members')}
-              className={`flex-1 py-4 px-6 font-semibold flex items-center justify-center gap-2 border-b-2 transition whitespace-nowrap ${
+              className={`py-2 sm:py-4 px-2 sm:px-6 font-semibold text-xs sm:text-base flex items-center justify-center gap-1 sm:gap-2 border-b-2 transition whitespace-nowrap flex-1 sm:flex-none ${
                 activeTab === 'members'
                   ? 'border-orange-500 text-orange-600'
                   : 'border-transparent text-gray-600 hover:text-gray-900'
               }`}
             >
-              👥 Members
+              👥 <span className="hidden sm:inline">Members</span>
             </button>
             <button
               onClick={() => setActiveTab('finance')}
-              className={`flex-1 py-4 px-6 font-semibold flex items-center justify-center gap-2 border-b-2 transition whitespace-nowrap ${
+              className={`py-2 sm:py-4 px-2 sm:px-6 font-semibold text-xs sm:text-base flex items-center justify-center gap-1 sm:gap-2 border-b-2 transition whitespace-nowrap flex-1 sm:flex-none ${
                 activeTab === 'finance'
                   ? 'border-orange-500 text-orange-600'
                   : 'border-transparent text-gray-600 hover:text-gray-900'
               }`}
             >
-              <FiBarChart2 /> Finance & Analytics
+              <FiBarChart2 /> <span className="hidden sm:inline">Finance & Analytics</span>
             </button>
             <button
               onClick={() => setActiveTab('settings')}
-              className={`flex-1 py-4 px-6 font-semibold flex items-center justify-center gap-2 border-b-2 transition whitespace-nowrap ${
+              className={`py-2 sm:py-4 px-2 sm:px-6 font-semibold text-xs sm:text-base flex items-center justify-center gap-1 sm:gap-2 border-b-2 transition whitespace-nowrap flex-1 sm:flex-none ${
                 activeTab === 'settings'
                   ? 'border-orange-500 text-orange-600'
                   : 'border-transparent text-gray-600 hover:text-gray-900'
               }`}
             >
-              ⚙️ Settings
+              ⚙️ <span className="hidden sm:inline">Settings</span>
             </button>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-4 sm:mb-6">
           {activeTab === 'products' ? (
             <>
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="text-gray-600 text-sm">Total Products</div>
-                <div className="text-3xl font-bold text-orange-500">{products.length}</div>
+              <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
+                <div className="text-gray-600 text-xs sm:text-sm">Total Products</div>
+                <div className="text-2xl sm:text-3xl font-bold text-orange-500">{products.length}</div>
               </div>
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="text-gray-600 text-sm">Categories</div>
-                <div className="text-3xl font-bold text-blue-500">{categories.length}</div>
+              <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
+                <div className="text-gray-600 text-xs sm:text-sm">Categories</div>
+                <div className="text-2xl sm:text-3xl font-bold text-blue-500">{categories.length}</div>
               </div>
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="text-gray-600 text-sm">In Stock</div>
-                <div className="text-3xl font-bold text-green-500">
+              <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
+                <div className="text-gray-600 text-xs sm:text-sm">In Stock</div>
+                <div className="text-2xl sm:text-3xl font-bold text-green-500">
                   {products.filter(p => p.stock > 0).length}
                 </div>
               </div>
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="text-gray-600 text-sm">Low Stock</div>
-                <div className="text-3xl font-bold text-red-500">
+              <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
+                <div className="text-gray-600 text-xs sm:text-sm">Low Stock</div>
+                <div className="text-2xl sm:text-3xl font-bold text-red-500">
                   {products.filter(p => p.stock < 10 && p.stock > 0).length}
                 </div>
               </div>
             </>
           ) : activeTab === 'orders' ? (
             <>
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="text-gray-600 text-sm">Total Orders</div>
-                <div className="text-3xl font-bold text-orange-500">{orders.length}</div>
+              <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
+                <div className="text-gray-600 text-xs sm:text-sm">Total Orders</div>
+                <div className="text-2xl sm:text-3xl font-bold text-orange-500">{orders.length}</div>
               </div>
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="text-gray-600 text-sm">Pending</div>
-                <div className="text-3xl font-bold text-yellow-500">{orders.filter(o => o.status === 'pending').length}</div>
+              <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
+                <div className="text-gray-600 text-xs sm:text-sm">Pending</div>
+                <div className="text-2xl sm:text-3xl font-bold text-yellow-500">{orders.filter(o => o.status === 'pending').length}</div>
               </div>
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="text-gray-600 text-sm">Processing</div>
-                <div className="text-3xl font-bold text-blue-500">{orders.filter(o => o.status === 'processing').length}</div>
+              <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
+                <div className="text-gray-600 text-xs sm:text-sm">Processing</div>
+                <div className="text-2xl sm:text-3xl font-bold text-blue-500">{orders.filter(o => o.status === 'processing').length}</div>
               </div>
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="text-gray-600 text-sm">Completed</div>
-                <div className="text-3xl font-bold text-green-500">{orders.filter(o => o.status === 'completed').length}</div>
+              <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
+                <div className="text-gray-600 text-xs sm:text-sm">Completed</div>
+                <div className="text-2xl sm:text-3xl font-bold text-green-500">{orders.filter(o => o.status === 'completed').length}</div>
               </div>
             </>
           ) : activeTab === 'members' ? (
             <>
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="text-gray-600 text-sm">Total Members</div>
-                <div className="text-3xl font-bold text-orange-500">{members.length}</div>
+              <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
+                <div className="text-gray-600 text-xs sm:text-sm">Total Members</div>
+                <div className="text-2xl sm:text-3xl font-bold text-orange-500">{members.length}</div>
               </div>
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="text-gray-600 text-sm">Customers</div>
-                <div className="text-3xl font-bold text-blue-500">{members.filter(m => !m.role || m.role === 'customer').length}</div>
+              <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
+                <div className="text-gray-600 text-xs sm:text-sm">Customers</div>
+                <div className="text-2xl sm:text-3xl font-bold text-blue-500">{members.filter(m => !m.role || m.role === 'customer').length}</div>
               </div>
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="text-gray-600 text-sm">Vendors</div>
-                <div className="text-3xl font-bold text-green-500">{members.filter(m => m.role === 'vendor').length}</div>
+              <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
+                <div className="text-gray-600 text-xs sm:text-sm">Vendors</div>
+                <div className="text-2xl sm:text-3xl font-bold text-green-500">{members.filter(m => m.role === 'vendor').length}</div>
               </div>
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="text-gray-600 text-sm">Admins</div>
-                <div className="text-3xl font-bold text-red-500">{members.filter(m => m.role === 'admin').length}</div>
+              <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
+                <div className="text-gray-600 text-xs sm:text-sm">Admins</div>
+                <div className="text-2xl sm:text-3xl font-bold text-red-500">{members.filter(m => m.role === 'admin').length}</div>
               </div>
             </>
           ) : null}
@@ -654,7 +654,7 @@ const AdminDashboard = () => {
 
         {/* Update Message */}
         {orderUpdateMessage && activeTab === 'orders' && (
-          <div className={`px-4 py-3 rounded-lg mb-6 border ${
+          <div className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg mb-4 sm:mb-6 border text-sm sm:text-base ${
             orderUpdateMessage.type === 'success'
               ? 'bg-green-50 border-green-200 text-green-800'
               : 'bg-red-50 border-red-200 text-red-800'
@@ -668,9 +668,9 @@ const AdminDashboard = () => {
           <>
             {/* Add/Edit Product Form */}
             {showForm && (
-              <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold">
+              <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-2">
+                  <h2 className="text-xl sm:text-2xl font-bold">
                     {editingProduct ? 'Edit Product' : 'Add New Product'}
                   </h2>
                   <button
@@ -681,23 +681,23 @@ const AdminDashboard = () => {
                   </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Product Name *</label>
+                  <label className="block text-xs sm:text-sm font-medium mb-2">Product Name *</label>
                   <input
                     type="text"
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                    className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 text-sm"
                     placeholder="Samsung Galaxy S23"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Category *</label>
+                  <label className="block text-xs sm:text-sm font-medium mb-2">Category *</label>
                   <CategoryDropdown 
                     value={formData.category}
                     onChange={handleInputChange}
@@ -707,21 +707,21 @@ const AdminDashboard = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Description *</label>
+                <label className="block text-xs sm:text-sm font-medium mb-2">Description *</label>
                 <textarea
                   name="description"
                   value={formData.description}
                   onChange={handleInputChange}
                   rows="3"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 text-sm"
                   placeholder="Detailed product description..."
                   required
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Price (KES) *</label>
+                  <label className="block text-xs sm:text-sm font-medium mb-2">Price (KES) *</label>
                   <input
                     type="number"
                     name="price"
@@ -729,14 +729,14 @@ const AdminDashboard = () => {
                     onChange={handleInputChange}
                     step="0.01"
                     min="0"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                    className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 text-sm"
                     placeholder="89999"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Original Price (KES)</label>
+                  <label className="block text-xs sm:text-sm font-medium mb-2">Original Price (KES)</label>
                   <input
                     type="number"
                     name="originalPrice"
@@ -744,27 +744,27 @@ const AdminDashboard = () => {
                     onChange={handleInputChange}
                     step="0.01"
                     min="0"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                    className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 text-sm"
                     placeholder="119999"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Stock *</label>
+                  <label className="block text-xs sm:text-sm font-medium mb-2">Stock *</label>
                   <input
                     type="number"
                     name="stock"
                     value={formData.stock}
                     onChange={handleInputChange}
                     min="0"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                    className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 text-sm"
                     placeholder="50"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Discount (%)</label>
+                  <label className="block text-xs sm:text-sm font-medium mb-2">Discount (%)</label>
                   <input
                     type="number"
                     name="discount"
@@ -772,7 +772,7 @@ const AdminDashboard = () => {
                     onChange={handleInputChange}
                     min="0"
                     max="100"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                    className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 text-sm"
                     placeholder="25"
                   />
                 </div>
@@ -780,19 +780,19 @@ const AdminDashboard = () => {
 
               {/* Multiple Image URLs with Upload */}
               <div>
-                <label className="block text-sm font-medium mb-2">
+                <label className="block text-xs sm:text-sm font-medium mb-2">
                   Product Images *
                 </label>
                 
                 {/* Display current images */}
                 {formData.images && (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3 mb-3">
                     {formData.images.split(',').filter(url => url.trim()).map((url, index) => (
                       <div key={index} className="relative group">
                         <img
                           src={url.trim()}
                           alt={`Product ${index + 1}`}
-                          className="w-full h-24 object-cover rounded-lg border-2 border-gray-200"
+                          className="w-full h-20 sm:h-24 object-cover rounded-lg border-2 border-gray-200"
                           onError={(e) => {
                             e.target.src = 'https://via.placeholder.com/200x200?text=Invalid+URL';
                           }}
@@ -815,13 +815,13 @@ const AdminDashboard = () => {
                 )}
 
                 {/* Upload Methods Tabs */}
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-50">
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-3 sm:p-4 bg-gray-50">
                   <div className="mb-4">
                     <div className="flex gap-2 mb-3">
                       <button
                         type="button"
                         onClick={() => document.getElementById('tabUpload').click()}
-                        className="flex-1 py-2 px-4 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+                        className="flex-1 py-2 px-3 sm:px-4 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition text-sm"
                       >
                         <div className="flex items-center justify-center gap-2">
                           <FiUpload />
@@ -909,9 +909,9 @@ const AdminDashboard = () => {
               {/* Hidden radio to make tabs work */}
               <input type="radio" id="tabUpload" name="imageTab" className="hidden" defaultChecked />
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Rating (0-5)</label>
+                  <label className="block text-xs sm:text-sm font-medium mb-2">Rating (0-5)</label>
                   <input
                     type="number"
                     name="rating"
@@ -920,19 +920,19 @@ const AdminDashboard = () => {
                     step="0.1"
                     min="0"
                     max="5"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                    className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Review Count</label>
+                  <label className="block text-xs sm:text-sm font-medium mb-2">Review Count</label>
                   <input
                     type="number"
                     name="reviewCount"
                     value={formData.reviewCount}
                     onChange={handleInputChange}
                     min="0"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                    className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 text-sm"
                   />
                 </div>
 
@@ -943,9 +943,9 @@ const AdminDashboard = () => {
                       name="featured"
                       checked={formData.featured}
                       onChange={handleInputChange}
-                      className="mr-2 w-5 h-5"
+                      className="mr-2 w-4 sm:w-5 h-4 sm:h-5"
                     />
-                    <span className="text-sm font-medium">Featured Product</span>
+                    <span className="text-xs sm:text-sm font-medium">Featured Product</span>
                   </label>
                 </div>
               </div>
@@ -953,7 +953,7 @@ const AdminDashboard = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-orange-500 text-white py-3 rounded-lg font-semibold hover:bg-orange-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-orange-500 text-white py-2 sm:py-3 rounded-lg font-semibold hover:bg-orange-600 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
               >
                 {loading 
                   ? (editingProduct ? 'Updating...' : 'Adding...') 
@@ -965,43 +965,43 @@ const AdminDashboard = () => {
         )}
 
         {/* Products List */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-bold mb-6">All Products ({products.length})</h2>
+        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+          <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">All Products ({products.length})</h2>
           
           {loading && products.length === 0 ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-4 border-orange-500 border-t-transparent mx-auto"></div>
-              <p className="mt-4 text-gray-600">Loading products...</p>
+              <p className="mt-4 text-gray-600 text-sm sm:text-base">Loading products...</p>
             </div>
           ) : products.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-gray-600 text-lg">No products yet. Add your first product!</p>
+              <p className="text-gray-600 text-base sm:text-lg">No products yet. Add your first product!</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <table className="w-full text-sm sm:text-base">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left py-3 px-4">Product</th>
-                    <th className="text-left py-3 px-4">Category</th>
-                    <th className="text-left py-3 px-4">Price</th>
-                    <th className="text-left py-3 px-4">Stock</th>
-                    <th className="text-left py-3 px-4">Rating</th>
-                    <th className="text-center py-3 px-4">Actions</th>
+                    <th className="text-left py-2 sm:py-3 px-3 sm:px-4">Product</th>
+                    <th className="text-left py-2 sm:py-3 px-3 sm:px-4 hidden sm:table-cell">Category</th>
+                    <th className="text-left py-2 sm:py-3 px-3 sm:px-4">Price</th>
+                    <th className="text-left py-2 sm:py-3 px-3 sm:px-4 hidden md:table-cell">Stock</th>
+                    <th className="text-left py-2 sm:py-3 px-3 sm:px-4 hidden lg:table-cell">Rating</th>
+                    <th className="text-center py-2 sm:py-3 px-3 sm:px-4">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {products.map((product) => (
                     <tr key={product.id} className="border-b hover:bg-gray-50">
-                      <td className="py-4 px-4">
-                        <div className="flex items-center gap-3">
+                      <td className="py-3 sm:py-4 px-3 sm:px-4">
+                        <div className="flex items-center gap-2 sm:gap-3">
                           <img
                             src={product.images?.[0] || product.image || 'https://via.placeholder.com/50'}
                             alt={product.name}
-                            className="w-12 h-12 object-cover rounded"
+                            className="w-10 sm:w-12 h-10 sm:h-12 object-cover rounded"
                           />
-                          <div>
-                            <div className="font-semibold">{product.name}</div>
+                          <div className="min-w-0">
+                            <div className="font-semibold text-xs sm:text-sm truncate">{product.name}</div>
                             {product.featured && (
                               <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded">
                                 Featured
@@ -1010,17 +1010,17 @@ const AdminDashboard = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="py-4 px-4 capitalize">{product.category}</td>
-                      <td className="py-4 px-4">
-                        <div className="font-semibold">{formatPrice(product.price)}</div>
+                      <td className="py-3 sm:py-4 px-3 sm:px-4 capitalize hidden sm:table-cell">{product.category}</td>
+                      <td className="py-3 sm:py-4 px-3 sm:px-4">
+                        <div className="font-semibold text-xs sm:text-sm">{formatPrice(product.price)}</div>
                         {product.discount > 0 && (
-                          <div className="text-sm text-gray-500 line-through">
+                          <div className="text-xs text-gray-500 line-through">
                             {formatPrice(product.originalPrice)}
                           </div>
                         )}
                       </td>
-                      <td className="py-4 px-4">
-                        <span className={`px-2 py-1 rounded text-sm ${
+                      <td className="py-3 sm:py-4 px-3 sm:px-4 hidden md:table-cell">
+                        <span className={`px-2 py-1 rounded text-xs sm:text-sm ${
                           product.stock === 0 
                             ? 'bg-red-100 text-red-600' 
                             : product.stock < 10 
@@ -1030,19 +1030,19 @@ const AdminDashboard = () => {
                           {product.stock} units
                         </span>
                       </td>
-                      <td className="py-4 px-4">
-                        <div className="flex items-center gap-1">
+                      <td className="py-3 sm:py-4 px-3 sm:px-4 hidden lg:table-cell">
+                        <div className="flex items-center gap-1 text-sm">
                           <span className="text-yellow-400">★</span>
                           <span>{product.rating}</span>
-                          <span className="text-gray-400 text-sm">({product.reviewCount})</span>
+                          <span className="text-gray-400 text-xs">({product.reviewCount})</span>
                         </div>
                       </td>
-                      <td className="py-4 px-4">
-                        <div className="flex items-center justify-center gap-2">
+                      <td className="py-3 sm:py-4 px-3 sm:px-4">
+                        <div className="flex items-center justify-center gap-1 sm:gap-2">
                           <button
                             onClick={() => handleEdit(product)}
                             disabled={loading}
-                            className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition disabled:opacity-50"
+                            className="bg-blue-500 text-white p-1.5 sm:p-2 rounded hover:bg-blue-600 transition disabled:opacity-50 text-xs sm:text-base"
                             title="Edit Product"
                           >
                             <FiEdit2 />
@@ -1050,7 +1050,7 @@ const AdminDashboard = () => {
                           <button
                             onClick={() => handleDelete(product.id, product.name)}
                             disabled={loading}
-                            className="bg-red-500 text-white p-2 rounded hover:bg-red-600 transition disabled:opacity-50"
+                            className="bg-red-500 text-white p-1.5 sm:p-2 rounded hover:bg-red-600 transition disabled:opacity-50 text-xs sm:text-base"
                             title="Delete Product"
                           >
                             <FiTrash2 />
@@ -1071,27 +1071,27 @@ const AdminDashboard = () => {
         {activeTab === 'orders' && (
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             {/* Search and Filters */}
-            <div className="p-6 border-b">
+            <div className="p-3 sm:p-6 border-b">
               {/* Search Bar */}
               <div className="mb-4">
-                <label className="block text-sm font-semibold mb-2">Search Orders</label>
+                <label className="block text-xs sm:text-sm font-semibold mb-2">Search Orders</label>
                 <input
                   type="text"
                   placeholder="Search by Order ID, Customer Name, or Email..."
                   value={orderSearchTerm}
                   onChange={(e) => setOrderSearchTerm(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 text-sm"
                 />
               </div>
 
               {/* Filters */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-sm font-semibold mb-2">Filter by Status</label>
+                  <label className="block text-xs sm:text-sm font-semibold mb-2">Filter by Status</label>
                   <select
                     value={orderStatusFilter}
                     onChange={(e) => setOrderStatusFilter(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                    className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 text-sm"
                   >
                     <option value="all">All Statuses</option>
                     <option value="pending">Pending</option>
@@ -1104,11 +1104,11 @@ const AdminDashboard = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold mb-2">Filter by Date</label>
+                  <label className="block text-xs sm:text-sm font-semibold mb-2">Filter by Date</label>
                   <select
                     value={orderDateFilter}
                     onChange={(e) => setOrderDateFilter(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                    className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 text-sm"
                   >
                     <option value="all">All Dates</option>
                     <option value="today">Today</option>
@@ -1118,36 +1118,36 @@ const AdminDashboard = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold mb-2">Clear Filters</label>
+                  <label className="block text-xs sm:text-sm font-semibold mb-2">Clear Filters</label>
                   <button
                     onClick={() => {
                       setOrderSearchTerm('');
                       setOrderStatusFilter('all');
                       setOrderDateFilter('all');
                     }}
-                    className="w-full px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition font-medium"
+                    className="w-full px-3 sm:px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition font-medium text-sm"
                   >
                     Reset All Filters
                   </button>
                 </div>
               </div>
 
-              <p className="text-sm text-gray-500 mt-4">
+              <p className="text-xs sm:text-sm text-gray-500 mt-4">
                 Found {filteredOrders.length} order{filteredOrders.length !== 1 ? 's' : ''}
               </p>
             </div>
 
             {filteredOrders.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full">
+              <div className="overflow-x-auto -mx-4 sm:mx-0">
+                <table className="w-full text-sm sm:text-base">
                   <thead>
                     <tr className="bg-gray-100 border-b">
-                      <th className="text-left py-3 px-4">Order ID</th>
-                      <th className="text-left py-3 px-4">Invoice #</th>
-                      <th className="text-left py-3 px-4">Customer</th>
-                      <th className="text-left py-3 px-4">Email</th>
-                      <th className="text-left py-3 px-4">Phone</th>
-                      <th className="text-left py-3 px-4">Date</th>
+                      <th className="text-left py-2 sm:py-3 px-3 sm:px-4">Order ID</th>
+                      <th className="text-left py-2 sm:py-3 px-3 sm:px-4 hidden sm:table-cell">Invoice #</th>
+                      <th className="text-left py-2 sm:py-3 px-3 sm:px-4">Customer</th>
+                      <th className="text-left py-2 sm:py-3 px-3 sm:px-4 hidden md:table-cell">Email</th>
+                      <th className="text-left py-2 sm:py-3 px-3 sm:px-4 hidden lg:table-cell">Phone</th>
+                      <th className="text-left py-2 sm:py-3 px-3 sm:px-4 hidden sm:table-cell">Date</th>
                       <th className="text-left py-3 px-4">Items</th>
                       <th className="text-left py-3 px-4">Total</th>
                       <th className="text-left py-3 px-4">Status</th>
@@ -1256,27 +1256,27 @@ const AdminDashboard = () => {
         {activeTab === 'members' && (
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             {/* Search and Filters */}
-            <div className="p-6 border-b">
+            <div className="p-3 sm:p-6 border-b">
               {/* Search Bar */}
               <div className="mb-4">
-                <label className="block text-sm font-semibold mb-2">Search Members</label>
+                <label className="block text-xs sm:text-sm font-semibold mb-2">Search Members</label>
                 <input
                   type="text"
                   placeholder="Search by Name, Email, or ID..."
                   value={memberSearchTerm}
                   onChange={(e) => setMemberSearchTerm(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 text-sm"
                 />
               </div>
 
               {/* Filters */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-sm font-semibold mb-2">Filter by Role</label>
+                  <label className="block text-xs sm:text-sm font-semibold mb-2">Filter by Role</label>
                   <select
                     value={memberRoleFilter}
                     onChange={(e) => setMemberRoleFilter(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                    className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 text-sm"
                   >
                     <option value="all">All Roles</option>
                     <option value="customer">Customer</option>
@@ -1288,60 +1288,60 @@ const AdminDashboard = () => {
                 <div></div>
 
                 <div>
-                  <label className="block text-sm font-semibold mb-2">Clear Filters</label>
+                  <label className="block text-xs sm:text-sm font-semibold mb-2">Clear Filters</label>
                   <button
                     onClick={() => {
                       setMemberSearchTerm('');
                       setMemberRoleFilter('all');
                     }}
-                    className="w-full px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition font-medium"
+                    className="w-full px-3 sm:px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition font-medium text-sm"
                   >
                     Reset All Filters
                   </button>
                 </div>
               </div>
 
-              <p className="text-sm text-gray-500 mt-4">
+              <p className="text-xs sm:text-sm text-gray-500 mt-4">
                 Found {filteredMembers.length} member{filteredMembers.length !== 1 ? 's' : ''}
               </p>
             </div>
 
             {filteredMembers.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full">
+              <div className="overflow-x-auto -mx-4 sm:mx-0">
+                <table className="w-full text-sm sm:text-base">
                   <thead>
                     <tr className="bg-gray-100 border-b">
-                      <th className="text-left py-3 px-4">Member</th>
-                      <th className="text-left py-3 px-4">Email</th>
-                      <th className="text-left py-3 px-4">Role</th>
-                      <th className="text-left py-3 px-4">Status</th>
-                      <th className="text-left py-3 px-4">Joined Date</th>
-                      <th className="text-left py-3 px-4">Phone</th>
-                      <th className="text-center py-3 px-4">Actions</th>
+                      <th className="text-left py-2 sm:py-3 px-3 sm:px-4">Member</th>
+                      <th className="text-left py-2 sm:py-3 px-3 sm:px-4 hidden sm:table-cell">Email</th>
+                      <th className="text-left py-2 sm:py-3 px-3 sm:px-4">Role</th>
+                      <th className="text-left py-2 sm:py-3 px-3 sm:px-4 hidden md:table-cell">Status</th>
+                      <th className="text-left py-2 sm:py-3 px-3 sm:px-4 hidden lg:table-cell">Joined Date</th>
+                      <th className="text-left py-2 sm:py-3 px-3 sm:px-4 hidden xl:table-cell">Phone</th>
+                      <th className="text-center py-2 sm:py-3 px-3 sm:px-4">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredMembers.map((member) => (
                       <tr key={member.id} className="border-b hover:bg-gray-50">
-                        <td className="py-4 px-4">
-                          <div className="flex items-center gap-3">
+                        <td className="py-3 sm:py-4 px-3 sm:px-4">
+                          <div className="flex items-center gap-2 sm:gap-3">
                             {member.photoURL ? (
                               <img
                                 src={member.photoURL}
                                 alt={member.displayName}
-                                className="w-10 h-10 rounded-full object-cover"
+                                className="w-8 sm:w-10 h-8 sm:h-10 rounded-full object-cover"
                               />
                             ) : (
-                              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-sm font-bold text-orange-600">
+                              <div className="w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-orange-100 flex items-center justify-center text-xs sm:text-sm font-bold text-orange-600">
                                 {member.displayName?.charAt(0) || 'U'}
                               </div>
                             )}
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-semibold">{member.displayName || 'Unknown'}</span>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1 sm:gap-2">
+                                <span className="font-semibold text-xs sm:text-sm truncate">{member.displayName || 'Unknown'}</span>
                                 {member.verified && (
                                   <div className="relative group">
-                                    <FiCheck className="w-4 h-4 text-blue-500 bg-white rounded-full border border-blue-500 flex items-center justify-center" />
+                                    <FiCheck className="w-3 sm:w-4 h-3 sm:h-4 text-blue-500 bg-white rounded-full border border-blue-500 flex items-center justify-center" />
                                     <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap z-10">
                                       Verified
                                     </div>
@@ -1352,9 +1352,9 @@ const AdminDashboard = () => {
                             </div>
                           </div>
                         </td>
-                        <td className="py-4 px-4 text-sm">{member.email || 'N/A'}</td>
-                        <td className="py-4 px-4">
-                          <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                        <td className="py-3 sm:py-4 px-3 sm:px-4 text-xs sm:text-sm hidden sm:table-cell">{member.email || 'N/A'}</td>
+                        <td className="py-3 sm:py-4 px-3 sm:px-4">
+                          <span className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold ${
                             member.role === 'admin'
                               ? 'bg-red-100 text-red-800'
                               : member.role === 'vendor'
@@ -1364,11 +1364,11 @@ const AdminDashboard = () => {
                             {(member.role || 'customer').charAt(0).toUpperCase() + (member.role || 'customer').slice(1)}
                           </span>
                         </td>
-                        <td className="py-4 px-4">
+                        <td className="py-3 sm:py-4 px-3 sm:px-4 hidden md:table-cell">
                           <button
                             onClick={() => handleVerificationToggle(member.id, member.verified)}
                             disabled={updatingMemberId === member.id}
-                            className={`px-3 py-1 rounded-full text-sm font-semibold transition ${
+                            className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold transition ${
                               member.verified
                                 ? 'bg-green-100 text-green-800 hover:bg-green-200'
                                 : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
@@ -1378,7 +1378,7 @@ const AdminDashboard = () => {
                             {member.verified ? '✓ Verified' : '○ Unverified'}
                           </button>
                         </td>
-                        <td className="py-4 px-4 text-sm">
+                        <td className="py-3 sm:py-4 px-3 sm:px-4 text-xs sm:text-sm hidden lg:table-cell">
                           {member.createdAt
                             ? new Date(member.createdAt).toLocaleDateString('en-US', {
                                 year: 'numeric',
@@ -1387,9 +1387,9 @@ const AdminDashboard = () => {
                               })
                             : 'N/A'}
                         </td>
-                        <td className="py-4 px-4 text-sm">{member.phone || 'N/A'}</td>
-                        <td className="py-4 px-4">
-                          <div className="flex flex-wrap gap-1 justify-center">
+                        <td className="py-3 sm:py-4 px-3 sm:px-4 text-xs sm:text-sm hidden xl:table-cell">{member.phone || 'N/A'}</td>
+                        <td className="py-3 sm:py-4 px-3 sm:px-4">
+                          <div className="flex flex-wrap gap-0.5 sm:gap-1 justify-center">
                             {['customer', 'vendor', 'admin'].map((role) => (
                               <button
                                 key={role}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Mail, Phone, MapPin, CreditCard, Building } from 'lucide-react';
 import './Footer.css';
 
 const Footer = () => {
@@ -52,14 +53,55 @@ const Footer = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 py-6 sm:py-8">
               <div>
                 <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 text-white">Contact Info</h3>
-                <p className="text-gray-300 mb-1 sm:mb-2 text-xs sm:text-sm">📧 Email: <a href="mailto:support@aruviah.com" className="text-orange-500 hover:text-orange-400">support@aruviah.com</a></p>
-                <p className="text-gray-300 mb-1 sm:mb-2 text-xs sm:text-sm">📱 Phone: <a href="tel:+254" className="text-orange-500 hover:text-orange-400">+254 (Your Number)</a></p>
-                <p className="text-gray-300 text-xs sm:text-sm">📍 Kisii, Kenya</p>
+                <div className="flex items-center gap-2 text-gray-300 mb-1 sm:mb-2 text-xs sm:text-sm">
+                  <Mail className="w-4 h-4 text-orange-500 flex-shrink-0" />
+                  <span>Email: <a href="mailto:support@aruviah.com" className="text-orange-500 hover:text-orange-400">support@aruviah.com</a></span>
+                </div>
+                <div className="flex items-center gap-2 text-gray-300 mb-1 sm:mb-2 text-xs sm:text-sm">
+                  <Phone className="w-4 h-4 text-orange-500 flex-shrink-0" />
+                  <span>Phone: <a href="tel:+254703147873" className="text-orange-500 hover:text-orange-400">+254703147873</a></span>
+                </div>
+                <div className="flex items-center gap-2 text-gray-300 text-xs sm:text-sm">
+                  <MapPin className="w-4 h-4 text-orange-500 flex-shrink-0" />
+                  <span>Kisii, Kenya</span>
+                </div>
               </div>
               <div>
                 <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 text-white">Payment Methods</h3>
-                <p className="text-gray-300 text-xs sm:text-sm">We accept:</p>
-                <p className="text-gray-300 text-xs sm:text-sm">• M-Pesa • Bank Transfer • Credit/Debit Card • PayPal</p>
+                <p className="text-gray-300 text-xs sm:text-sm mb-3">We accept:</p>
+                <div className="flex flex-wrap gap-4 items-center">
+                  {/* M-Pesa Logo */}
+                  <div className="flex items-center justify-center">
+                    <svg className="w-16 h-8" viewBox="0 0 100 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <text x="50" y="35" fontSize="24" fontWeight="bold" fill="#00A651" textAnchor="middle">M-Pesa</text>
+                    </svg>
+                  </div>
+                  {/* Bank Transfer */}
+                  <div className="flex items-center gap-1 text-white text-xs sm:text-sm font-semibold">
+                    <Building className="w-5 h-5 text-blue-400" />
+                    <span className="text-gray-300">Bank</span>
+                  </div>
+                  {/* Credit Card */}
+                  <div className="flex items-center gap-1 text-white text-xs sm:text-sm font-semibold">
+                    <CreditCard className="w-5 h-5 text-red-400" />
+                    <span className="text-gray-300">Card</span>
+                  </div>
+                  {/* PayPal Logo */}
+                  <div className="flex items-center justify-center">
+                    <svg className="w-16 h-8" viewBox="0 0 200 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      {/* P Icon */}
+                      <rect x="10" y="20" width="35" height="60" rx="5" fill="#003087" />
+                      <circle cx="27" cy="40" r="8" fill="white" />
+                      <path d="M 27 45 Q 35 45 35 52 Q 35 60 27 60" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" />
+                      
+                      {/* Pay text */}
+                      <text x="70" y="60" fontSize="32" fontWeight="bold" fill="#003087">Pay</text>
+                      
+                      {/* Pal text */}
+                      <text x="155" y="60" fontSize="32" fontWeight="bold" fill="#009cde">Pal</text>
+                    </svg>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

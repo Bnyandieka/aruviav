@@ -116,13 +116,13 @@ const ProductCard = ({ product }) => {
             </button>
           )}
 
-          <Link
-            to={`/product/${product.id}`}
+          <button
+            onClick={() => window.location.href = `/product/${product.id}`}
             className="bg-white text-gray-800 p-3 rounded-full hover:bg-orange-500 hover:text-white transition-all transform hover:scale-110"
             title="Quick View"
           >
             <FiEye />
-          </Link>
+          </button>
         </div>
       </div>
 

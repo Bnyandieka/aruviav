@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { submitVendorApplication, checkPendingVendorApplication, sendApplicationReceivedNotification } from '../../services/vendor/vendorService';
+import { CATEGORIES } from '../../utils/constants';
 import { toast } from 'react-toastify';
 import './VendorSignupForm.css';
 
@@ -217,16 +218,11 @@ export default function VendorSignupForm() {
               required
             >
               <option value="">Select a category</option>
-              <option value="electronics">Electronics</option>
-              <option value="fashion">Fashion & Apparel</option>
-              <option value="home">Home & Garden</option>
-              <option value="beauty">Beauty & Personal Care</option>
-              <option value="sports">Sports & Outdoors</option>
-              <option value="books">Books & Media</option>
-              <option value="toys">Toys & Games</option>
-              <option value="food">Food & Beverages</option>
-              <option value="handmade">Handmade & Crafts</option>
-              <option value="other">Other</option>
+              {CATEGORIES.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
             </select>
           </div>
 

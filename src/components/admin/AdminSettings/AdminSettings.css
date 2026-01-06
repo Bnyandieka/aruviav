@@ -1,34 +1,55 @@
 .admin-settings-container {
-  max-width: 800px;
+  max-width: 100%;
+  width: 100%;
   margin: 0 auto;
-  padding: 30px 20px;
+  padding: 20px 0;
+}
+
+/* Settings Tabs Wrapper */
+.settings-tabs-wrapper {
+  width: 100%;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin-bottom: 24px;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Settings Tabs */
 .settings-tabs {
   display: flex;
-  gap: 10px;
-  margin-bottom: 30px;
-  background: white;
-  padding: 15px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  gap: 4px;
+  padding: 12px 16px;
+  min-width: min-content;
+  border-radius: 0;
 }
 
 .settings-tab {
-  padding: 12px 24px;
+  padding: 10px 14px;
   border: 2px solid transparent;
   background: transparent;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 12px;
   color: #666;
   transition: all 0.3s ease;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.settings-tab svg {
+  flex-shrink: 0;
+}
+
+.tab-label {
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .settings-tab:hover {
@@ -44,47 +65,55 @@
 
 .settings-card {
   background: white;
-  border-radius: 12px;
-  padding: 40px;
+  border-radius: 8px;
+  padding: 20px 16px;
+  margin: 0 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+.settings-header {
+  margin-bottom: 24px;
+}
+
 .settings-title {
-  font-size: 28px;
+  font-size: 22px;
   font-weight: 700;
   color: #333;
-  margin: 0 0 8px 0;
+  margin: 0 0 6px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .settings-subtitle {
   color: #666;
-  font-size: 14px;
-  margin: 0 0 30px 0;
+  font-size: 13px;
+  margin: 0;
 }
 
 .logo-section {
-  margin: 30px 0;
+  margin: 24px 0;
 }
 
 .section-title {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   color: #333;
-  margin: 0 0 8px 0;
+  margin: 0 0 6px 0;
 }
 
 .section-description {
   color: #666;
-  font-size: 13px;
-  margin: 0 0 20px 0;
+  font-size: 12px;
+  margin: 0 0 16px 0;
 }
 
 .logo-preview-container {
   background: #f9f9f9;
   border-radius: 8px;
-  padding: 50px;
+  padding: 30px 16px;
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   border: 2px solid #eee;
 }
 
@@ -92,36 +121,37 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 200px;
-  margin-bottom: 15px;
+  min-height: 140px;
+  margin-bottom: 12px;
 }
 
 .logo-image {
   max-width: 100%;
-  max-height: 200px;
+  max-height: 140px;
   object-fit: contain;
 }
 
 .preview-label {
   color: #999;
-  font-size: 12px;
+  font-size: 11px;
   margin: 0;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .upload-section {
-  margin: 30px 0;
+  margin: 20px 0;
 }
 
 .upload-label {
   cursor: pointer;
+  display: block;
 }
 
 .upload-box {
   border: 2px dashed #ff9800;
   border-radius: 8px;
-  padding: 40px 20px;
+  padding: 32px 16px;
   text-align: center;
   transition: all 0.3s ease;
   background: #fff9f0;
@@ -133,15 +163,15 @@
 }
 
 .upload-icon {
-  font-size: 40px;
-  margin-bottom: 15px;
+  font-size: 32px;
+  margin-bottom: 12px;
 }
 
 .upload-text {
   color: #333;
   font-weight: 600;
-  margin: 0 0 8px 0;
-  font-size: 16px;
+  margin: 0 0 6px 0;
+  font-size: 14px;
 }
 
 .upload-hint {
@@ -155,10 +185,10 @@
 }
 
 .alert {
-  padding: 15px 20px;
+  padding: 12px 16px;
   border-radius: 6px;
-  margin: 20px 0;
-  font-size: 14px;
+  margin: 16px 0;
+  font-size: 13px;
   animation: slideIn 0.3s ease-out;
 }
 
@@ -190,7 +220,7 @@
   background: #f0f0f0;
   border-radius: 3px;
   overflow: hidden;
-  margin: 20px 0;
+  margin: 16px 0;
 }
 
 .progress {
@@ -214,15 +244,15 @@
 .info-box {
   background: #f0f7ff;
   border-left: 4px solid #2196f3;
-  padding: 20px;
+  padding: 16px;
   border-radius: 6px;
-  margin-top: 30px;
+  margin-top: 20px;
 }
 
 .info-box h4 {
-  margin: 0 0 15px 0;
+  margin: 0 0 12px 0;
   color: #1976d2;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .info-box ul {
@@ -233,29 +263,144 @@
 
 .info-box li {
   color: #555;
-  font-size: 13px;
-  padding: 6px 0;
+  font-size: 12px;
+  padding: 4px 0;
   line-height: 1.6;
 }
 
-@media (max-width: 600px) {
+/* Mobile Responsive */
+@media (max-width: 768px) {
   .admin-settings-container {
-    padding: 15px 10px;
+    padding: 16px 0;
+  }
+
+  .settings-tabs-wrapper {
+    margin-bottom: 16px;
+  }
+
+  .settings-tabs {
+    padding: 10px 12px;
+    gap: 2px;
+  }
+
+  .settings-tab {
+    padding: 8px 10px;
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  .settings-tab svg {
+    width: 16px;
+    height: 16px;
   }
 
   .settings-card {
-    padding: 20px;
+    padding: 16px 12px;
+    margin: 0 8px;
+    border-radius: 6px;
+  }
+
+  .settings-header {
+    margin-bottom: 16px;
   }
 
   .settings-title {
-    font-size: 24px;
+    font-size: 18px;
+  }
+
+  .section-title {
+    font-size: 14px;
   }
 
   .logo-preview-container {
-    padding: 20px;
+    padding: 20px 12px;
   }
 
-  .upload-box {
-    padding: 30px 15px;
+  .logo-preview {
+    min-height: 120px;
+  }
+
+  .logo-image {
+    max-height: 120px;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-settings-container {
+    padding: 12px 0;
+  }
+
+  .settings-tabs {
+    padding: 8px 8px;
+    gap: 1px;
+  }
+
+  .settings-tab {
+    padding: 6px 8px;
+    font-size: 10px;
+    gap: 3px;
+  }
+
+  .settings-tab svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .settings-card {
+    padding: 12px 10px;
+    margin: 0 4px;
+  }
+
+  .settings-title {
+    font-size: 16px;
+  }
+
+  .settings-subtitle {
+    font-size: 12px;
+  }
+
+  .section-title {
+    font-size: 13px;
+  }
+
+  .section-description {
+    font-size: 11px;
+  }
+
+  .logo-preview-container {
+    padding: 16px 10px;
+  }
+
+  .logo-preview {
+    min-height: 100px;
+  }
+
+  .logo-image {
+    max-height: 100px;
+  }
+
+  .upload-icon {
+    font-size: 24px;
+  }
+
+  .upload-text {
+    font-size: 12px;
+  }
+
+  .alert {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+
+  .info-box {
+    padding: 12px;
+  }
+
+  .info-box h4 {
+    font-size: 12px;
+  }
+
+  .info-box li {
+    font-size: 11px;
   }
 }

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">aruviah</string>
+    <string name="title_activity_main">aruviah</string>
+    <string name="package_name">com.aruviah.app</string>
+    <string name="custom_url_scheme">com.aruviah.app</string>
+</resources>

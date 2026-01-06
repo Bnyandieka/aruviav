@@ -66,44 +66,58 @@ const AdminSettings = () => {
   return (
     <div className="admin-settings-container">
       {/* Settings Tabs */}
-      <div className="settings-tabs">
-        <button 
-          className={`settings-tab ${activeTab === 'branding' ? 'active' : ''}`}
-          onClick={() => setActiveTab('branding')}
-        >
-          <FiSettings size={18} /> Branding
-        </button>
-        <button 
-          className={`settings-tab ${activeTab === 'emails-inbox' ? 'active' : ''}`}
-          onClick={() => setActiveTab('emails-inbox')}
-        >
-          <FiInbox size={18} /> Email Inbox
-        </button>
-        <button 
-          className={`settings-tab ${activeTab === 'email' ? 'active' : ''}`}
-          onClick={() => setActiveTab('email')}
-        >
-          <FiMail size={18} /> Email Templates
-        </button>
-        <button 
-          className={`settings-tab ${activeTab === 'newsletter' ? 'active' : ''}`}
-          onClick={() => setActiveTab('newsletter')}
-        >
-          <FiUsers size={18} /> Newsletter
-        </button>
-        <button 
-          className={`settings-tab ${activeTab === 'vendors' ? 'active' : ''}`}
-          onClick={() => setActiveTab('vendors')}
-        >
-          <FiShoppingCart size={18} /> Vendor Apps
-        </button>
+      <div className="settings-tabs-wrapper">
+        <div className="settings-tabs">
+          <button 
+            className={`settings-tab ${activeTab === 'branding' ? 'active' : ''}`}
+            onClick={() => setActiveTab('branding')}
+            title="Branding"
+          >
+            <FiSettings size={18} />
+            <span className="tab-label">Branding</span>
+          </button>
+          <button 
+            className={`settings-tab ${activeTab === 'emails-inbox' ? 'active' : ''}`}
+            onClick={() => setActiveTab('emails-inbox')}
+            title="Email Inbox"
+          >
+            <FiInbox size={18} />
+            <span className="tab-label">Email Inbox</span>
+          </button>
+          <button 
+            className={`settings-tab ${activeTab === 'email' ? 'active' : ''}`}
+            onClick={() => setActiveTab('email')}
+            title="Email Templates"
+          >
+            <FiMail size={18} />
+            <span className="tab-label">Email Templ</span>
+          </button>
+          <button 
+            className={`settings-tab ${activeTab === 'newsletter' ? 'active' : ''}`}
+            onClick={() => setActiveTab('newsletter')}
+            title="Newsletter"
+          >
+            <FiUsers size={18} />
+            <span className="tab-label">Newsletter</span>
+          </button>
+          <button 
+            className={`settings-tab ${activeTab === 'vendors' ? 'active' : ''}`}
+            onClick={() => setActiveTab('vendors')}
+            title="Vendor Applications"
+          >
+            <FiShoppingCart size={18} />
+            <span className="tab-label">Vendor Apps</span>
+          </button>
+        </div>
       </div>
 
       {/* Branding Tab */}
       {activeTab === 'branding' && (
         <div className="settings-card">
-          <h2 className="settings-title"><FiSettings size={24} style={{marginRight: '12px', display: 'inline'}} /> Branding Settings</h2>
-          <p className="settings-subtitle">Manage your store's logo and branding</p>
+          <div className="settings-header">
+            <h2 className="settings-title"><FiSettings size={24} style={{marginRight: '12px', display: 'inline'}} /> Branding Settings</h2>
+            <p className="settings-subtitle">Manage your store's logo and branding</p>
+          </div>
 
           <div className="logo-section">
             <h3 className="section-title">Store Logo</h3>

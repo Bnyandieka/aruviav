@@ -4,7 +4,25 @@
 import axios from 'axios';
 
 // Backend API base URL (adjust if needed)
+// Note: Only needed if you have a backend M-Pesa service running
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
+// Disable console errors for M-Pesa service if backend is not available
+const axiosInstance = axios.create({
+  baseURL: API_BASE_URL,
+  validateStatus: () => true // Don't throw on any status code
+});
+
+axiosInstance.interceptors.response.use(
+  response => response,
+  error => {
+    // Silently handle connection errors when backend is not available
+    if (!error.response && error.code === 'ECONNREFUSED') {
+      console.debug('M-Pesa backend service unavailable');
+    }
+    return Promise.reject(error);
+  }
+);
 
 /**
  * Initiate M-Pesa STK Push (Lipa Na M-Pesa Online)
@@ -20,8 +38,8 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
  */
 export const initiateMpesaPayment = async (paymentData) => {
   try {
-    const response = await axios.post(
-      `${API_BASE_URL}/api/mpesa/initiate-payment`,
+    const response = await axiosInstance.post(
+      `/api/mpesa/initiate-payment`,
       {
         phoneNumber: paymentData.phoneNumber,
         amount: paymentData.amount,
@@ -70,8 +88,8 @@ export const initiateMpesaPayment = async (paymentData) => {
  */
 export const checkMpesaPaymentStatus = async (checkoutRequestId) => {
   try {
-    const response = await axios.get(
-      `${API_BASE_URL}/api/mpesa/payment-status/${checkoutRequestId}`
+    const response = await axiosInstance.get(
+      `/api/mpesa/payment-status/${checkoutRequestId}`
     );
 
     return response.data;
@@ -94,8 +112,8 @@ export const checkMpesaPaymentStatus = async (checkoutRequestId) => {
  */
 export const processMpesaCallback = async (callbackData) => {
   try {
-    const response = await axios.post(
-      `${API_BASE_URL}/api/mpesa/callback`,
+    const response = await axiosInstance.post(
+      `/api/mpesa/callback`,
       callbackData
     );
 
