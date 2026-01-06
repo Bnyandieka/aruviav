@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
 import Breadcrumb from '../components/common/Breadcrumb/Breadcrumb';
 import { CATEGORIES } from '../utils/constants';
+import { createService } from '../services/firebase/firestoreHelpers';
 
 const SellServicePage = () => {
   const navigate = useNavigate();
@@ -44,7 +45,23 @@ const SellServicePage = () => {
 
     setLoading(true);
     try {
-      // TODO: Connect to Firebase to save service
+      // Save service to Firebase
+      const serviceData = {
+        name: formData.name,
+        description: formData.description,
+        category: formData.category,
+        price: parseFloat(formData.price),
+        duration: formData.duration,
+        sellerName: user.displayName || user.email || 'Service Provider',
+        sellerEmail: user.email,
+        sellerPhone: user.phone || '',
+        rating: 0,
+        reviewCount: 0,
+        bookings: 0
+      };
+
+      await createService(serviceData, user.uid);
+      
       toast.success('Service posted successfully! 🎉');
       setFormData({
         name: '',
