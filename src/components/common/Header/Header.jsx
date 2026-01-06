@@ -333,7 +333,7 @@ const Header = () => {
                   >
                     {category.name}
                   </button>
-                ))}}
+                ))}
               </div>
             </li>
           </ul>

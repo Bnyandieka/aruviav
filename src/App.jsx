@@ -34,6 +34,9 @@ import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import FAQPage from './pages/FAQPage';
 import SeedDataPage from './pages/SeedDataPage';
+import ServicesPage from './pages/ServicesPage';
+import SellServicePage from './pages/SellServicePage';
+import ServiceDetailsPage from './pages/ServiceDetailsPage';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -90,6 +93,8 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/products" element={<ProductsPage />} />
                 <Route path="/product/:id" element={<ProductDetailsPage />} />
+                <Route path="/services" element={<ServicesPage />} />
+                <Route path="/service/:id" element={<ServiceDetailsPage />} />
                 <Route path="/cart" element={<CartPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignupPage />} />
