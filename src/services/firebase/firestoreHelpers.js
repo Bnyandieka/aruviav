@@ -552,3 +552,185 @@ export const updateOrderStatus = async (orderId, status, vendorId = null) => {
     return { success: false, error: error.message };
   }
 };
+
+/**
+ * Get all services or filtered
+ */
+export const getServices = async (limitCount = null, filters = {}) => {
+  try {
+    let q = collection(db, 'services');
+    const constraints = [];
+    
+    if (filters.category) {
+      constraints.push(where('category', '==', filters.category));
+    }
+    
+    if (filters.minPrice) {
+      constraints.push(where('price', '>=', filters.minPrice));
+    }
+    
+    if (filters.maxPrice) {
+      constraints.push(where('price', '<=', filters.maxPrice));
+    }
+    
+    if (filters.sortBy === 'price-asc') {
+      constraints.push(orderBy('price', 'asc'));
+    } else if (filters.sortBy === 'price-desc') {
+      constraints.push(orderBy('price', 'desc'));
+    } else if (filters.sortBy === 'rating') {
+      constraints.push(orderBy('rating', 'desc'));
+    } else {
+      constraints.push(orderBy('createdAt', 'desc'));
+    }
+    
+    if (limitCount) {
+      constraints.push(limit(limitCount));
+    }
+    
+    if (constraints.length > 0) {
+      q = query(q, ...constraints);
+    }
+    
+    const snapshot = await getDocs(q);
+    const services = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    
+    return services;
+  } catch (error) {
+    console.error('Error fetching services:', error);
+    return [];
+  }
+};
+
+/**
+ * Get single service by ID
+ */
+export const getService = async (serviceId) => {
+  try {
+    const docRef = doc(db, 'services', serviceId);
+    const snapshot = await getDoc(docRef);
+    
+    if (!snapshot.exists()) {
+      return null;
+    }
+    
+    return {
+      id: snapshot.id,
+      ...snapshot.data()
+    };
+  } catch (error) {
+    console.error('Error fetching service:', error);
+    return null;
+  }
+};
+
+/**
+ * Create a new service
+ */
+export const createService = async (serviceData, userId) => {
+  try {
+    const newService = {
+      ...serviceData,
+      sellerId: userId,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      rating: 0,
+      reviewCount: 0,
+      bookings: 0
+    };
+    
+    const docRef = await addDoc(collection(db, 'services'), newService);
+    return {
+      id: docRef.id,
+      ...newService
+    };
+  } catch (error) {
+    console.error('Error creating service:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update service
+ */
+export const updateService = async (serviceId, updateData) => {
+  try {
+    const docRef = doc(db, 'services', serviceId);
+    await updateDoc(docRef, {
+      ...updateData,
+      updatedAt: serverTimestamp()
+    });
+    
+    return {
+      success: true,
+      id: serviceId
+    };
+  } catch (error) {
+    console.error('Error updating service:', error);
+    throw error;
+  }
+};
+
+/**
+ * Delete service
+ */
+export const deleteService = async (serviceId) => {
+  try {
+    const docRef = doc(db, 'services', serviceId);
+    await deleteDoc(docRef);
+    
+    return {
+      success: true,
+      message: 'Service deleted successfully'
+    };
+  } catch (error) {
+    console.error('Error deleting service:', error);
+    throw error;
+  }
+};
+
+/**
+ * Search services
+ */
+export const searchServices = async (searchTerm) => {
+  try {
+    const allServices = await getServices();
+    
+    const filtered = allServices.filter(service =>
+      service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      service.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      service.category.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    
+    return filtered;
+  } catch (error) {
+    console.error('Error searching services:', error);
+    return [];
+  }
+};
+
+/**
+ * Get services by seller ID
+ */
+export const getServicesBySeller = async (sellerId) => {
+  try {
+    const q = query(
+      collection(db, 'services'),
+      where('sellerId', '==', sellerId),
+      orderBy('createdAt', 'desc')
+    );
+    
+    const snapshot = await getDocs(q);
+    const services = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    
+    return services;
+  } catch (error) {
+    console.error('Error fetching seller services:', error);
+    return [];
+  }
+};
