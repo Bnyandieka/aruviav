@@ -110,6 +110,16 @@ function App() {
                 <Route path="/checkout" element={<CheckoutPage />} />
                 <Route path="/order-success" element={<OrderSuccessPage />} />
 
+                {/* Service Routes - Require Authentication for Selling */}
+                <Route
+                  path="/sell-service"
+                  element={
+                    <ProtectedRoute>
+                      <SellServicePage />
+                    </ProtectedRoute>
+                  }
+                />
+
                 {/* Vendor Routes - Require Authentication */}
                 <Route
                   path="/vendor/dashboard"

@@ -336,6 +336,17 @@ const Header = () => {
                 ))}
               </div>
             </li>
+            <li className="border-l border-gray-300 mx-2"></li>
+            <li>
+              <Link to="/services" className="hover:text-orange-500 inline-block py-1">
+                Buy a Service
+              </Link>
+            </li>
+            <li>
+              <Link to="/sell-service" className="hover:text-orange-500 inline-block py-1">
+                Sell Service
+              </Link>
+            </li>
           </ul>
         </div>
       </nav>
@@ -345,7 +356,26 @@ const Header = () => {
         <div className="mobile-menu md:hidden bg-white border-t max-h-screen overflow-y-auto">
           <div className="container mx-auto px-3 sm:px-4 py-4">
             <ul className="space-y-2">
-              <li className="font-semibold text-gray-700 pb-2 border-b text-sm">Categories</li>
+              <li className="font-semibold text-gray-700 pb-2 border-b text-sm">Services</li>
+              <li>
+                <Link
+                  to="/services"
+                  className="block hover:text-orange-500 py-2 text-sm"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Buy a Service
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/sell-service"
+                  className="block hover:text-orange-500 py-2 text-sm"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Sell Service
+                </Link>
+              </li>
+              <li className="font-semibold text-gray-700 pb-2 border-b text-sm pt-4">Categories</li>
               {CATEGORIES.map((category) => (
                 <li key={category.id}>
                   <Link
