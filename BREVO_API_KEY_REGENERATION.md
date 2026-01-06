@@ -4,7 +4,7 @@ Your API key was exposed in the chat and must be regenerated immediately.
 
 **Exposed Key:**
 ```
-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
+[REMOVED - PLEASE REGENERATE KEY]
 ```
 
 ## Steps to Regenerate:
