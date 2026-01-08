@@ -214,7 +214,8 @@ const AdminDashboard = () => {
           return dateB - dateA;
         });
         
-        setOrders(ordersData);      });
+        setOrders(ordersData);
+      });
 
       // Fetch all orders once (for initial data)
       const ordersSnap = await getDocs(ordersRef);
@@ -509,7 +510,7 @@ const AdminDashboard = () => {
               </div>
               <div style="background-color: #1f2937; color: white; padding: 20px; text-align: center; font-size: 12px;">
                 <p style="margin: 0; color: #9ca3af;">
-                  © ${new Date().getFullYear()} Shopki. All rights reserved.
+                  © ${new Date().getFullYear()} Aruviah. All rights reserved.
                 </p>
                 <p style="margin: 10px 0 0 0; color: #9ca3af;">
                   This is an automated message. Please do not reply to this email.
@@ -522,7 +523,7 @@ const AdminDashboard = () => {
             email: memberData.email,
             subject: '🎉 Your Account Has Been Verified - Welcome!',
             htmlContent: verificationEmailHtml,
-            senderName: 'Shopki',
+            senderName: 'Aruviah',
             senderEmail: process.env.REACT_APP_BREVO_SENDER_EMAIL,
             saveToAdminInbox: true,
             emailType: 'account_verified',

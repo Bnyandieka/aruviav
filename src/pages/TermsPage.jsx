@@ -136,7 +136,7 @@ const TermsPage = () => {
 
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">10. Intellectual Property Rights</h2>
-            <p>All platform content including logos, design, text is owned by Shopki. Users retain rights to their uploaded content but grant Shopki a non-exclusive, royalty-free license to use, display, and distribute content on the platform.</p>
+            <p>All platform content including logos, design, text is owned by Aruviah. Users retain rights to their uploaded content but grant Aruviah a non-exclusive, royalty-free license to use, display, and distribute content on the platform.</p>
           </section>
 
           <section>
@@ -165,7 +165,7 @@ const TermsPage = () => {
 
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">13. Limitation of Liability</h2>
-            <p>To the fullest extent permitted by law, Shopki shall not be liable for:</p>
+            <p>To the fullest extent permitted by law, Aruviah shall not be liable for:</p>
             <ul className="list-disc list-inside space-y-2 mt-2">
               <li>Indirect, incidental, or consequential damages</li>
               <li>Lost profits or business interruption</li>
@@ -178,7 +178,7 @@ const TermsPage = () => {
 
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">14. Indemnification</h2>
-            <p>You agree to indemnify and hold harmless Shopki from any claims, damages, or losses arising from:</p>
+            <p>You agree to indemnify and hold harmless Aruviah from any claims, damages, or losses arising from:</p>
             <ul className="list-disc list-inside space-y-2 mt-2">
               <li>Your violation of these Terms</li>
               <li>Your use of the platform in violation of laws</li>
@@ -189,7 +189,7 @@ const TermsPage = () => {
 
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">15. Termination</h2>
-            <p>Shopki may terminate or suspend your account if you:</p>
+            <p>Aruviah may terminate or suspend your account if you:</p>
             <ul className="list-disc list-inside space-y-2 mt-2">
               <li>Violate any provision of these Terms</li>
               <li>Engage in fraudulent activity</li>
@@ -206,7 +206,7 @@ const TermsPage = () => {
 
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">17. Force Majeure</h2>
-            <p>Shopki is not liable for delays or failures due to unforeseen circumstances including natural disasters, wars, pandemics, or government actions.</p>
+            <p>Aruviah is not liable for delays or failures due to unforeseen circumstances including natural disasters, wars, pandemics, or government actions.</p>
           </section>
 
           <section>
@@ -225,11 +225,11 @@ const TermsPage = () => {
             <h2 className="text-2xl font-bold text-gray-900 mb-4">19. Contact Information</h2>
             <p>For questions about these Terms, contact:</p>
             <p className="mt-4">
-              <strong>Shopki Support</strong><br />
-              Email: support@shopki.com<br />
+              <strong>Aruviah Support</strong><br />
+              Email: support@aruviah.com<br />
               Phone: +254 (Contact Number)<br />
               Address: Nairobi, Kenya<br />
-              Website: www.shopki.com
+              Website: www.aruviah.com
             </p>
           </section>
 
@@ -240,7 +240,7 @@ const TermsPage = () => {
 
           <div className="bg-gray-100 p-6 rounded-lg mt-12">
             <p className="text-sm text-gray-600">
-              By using Shopki, you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions. If you do not agree with any part of these terms, please do not use our platform.
+              By using Aruviah, you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions. If you do not agree with any part of these terms, please do not use our platform.
             </p>
           </div>
         </div>

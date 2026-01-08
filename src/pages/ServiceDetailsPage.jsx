@@ -126,13 +126,13 @@ const ServiceDetailsPage = () => {
               <div style="margin-top: 30px; padding: 15px; background-color: #fef3c7; border-radius: 8px; border-left: 4px solid #f97316;">
                 <p style="margin: 0;"><strong>Next Steps:</strong></p>
                 <p style="margin: 10px 0 0 0;">1. Review this booking request</p>
-                <p style="margin: 5px 0;">2. Log into Shopki to accept or reschedule</p>
+                <p style="margin: 5px 0;">2. Log into Aruviah to accept or reschedule</p>
                 <p style="margin: 5px 0;">3. Contact the customer to confirm details</p>
               </div>
             </div>
             
             <div style="background-color: #f3f4f6; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; font-size: 12px; color: #666;">
-              <p>© 2026 Shopki. All rights reserved.</p>
+              <p>© 2026 Aruviah. All rights reserved.</p>
             </div>
           </div>
         `;
@@ -141,7 +141,7 @@ const ServiceDetailsPage = () => {
           email: service.sellerEmail,
           subject: `New Booking Request - ${service.name}`,
           htmlContent: vendorEmailHtml,
-          senderName: 'Shopki Bookings',
+          senderName: 'Aruviah Bookings',
           senderEmail: process.env.REACT_APP_BREVO_SENDER_EMAIL,
           saveToAdminInbox: true,
           emailType: 'booking',
@@ -182,14 +182,14 @@ const ServiceDetailsPage = () => {
                 <p style="margin-top: 0;"><strong>What happens next?</strong></p>
                 <p style="margin: 10px 0;">✓ We've notified ${service.sellerName} about your booking request</p>
                 <p style="margin: 10px 0;">✓ They will review your request and contact you within 24 hours</p>
-                <p style="margin: 10px 0;">✓ You can chat with them directly in your Shopki account</p>
+                <p style="margin: 10px 0;">✓ You can chat with them directly in your Aruviah account</p>
               </div>
               
-              <p style="color: #666; font-size: 14px;">If you have any questions, you can reply to this email or contact the service provider through the Shopki platform.</p>
+              <p style="color: #666; font-size: 14px;">If you have any questions, you can reply to this email or contact the service provider through the Aruviah platform.</p>
             </div>
             
             <div style="background-color: #f3f4f6; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; font-size: 12px; color: #666;">
-              <p>© 2026 Shopki. All rights reserved.</p>
+              <p>© 2026 Aruviah. All rights reserved.</p>
             </div>
           </div>
         `;
@@ -198,7 +198,7 @@ const ServiceDetailsPage = () => {
           email: bookingForm.email,
           subject: `Booking Confirmation - ${service.name}`,
           htmlContent: customerEmailHtml,
-          senderName: 'Shopki Bookings',
+          senderName: 'Aruviah Bookings',
           senderEmail: process.env.REACT_APP_BREVO_SENDER_EMAIL,
           saveToAdminInbox: true,
           emailType: 'booking',

@@ -208,7 +208,7 @@ export const TermsAndConditionsPage = () => {
               {/* Acknowledgment */}
               <div className="mt-12 p-6 bg-green-50 border-l-4 border-green-500 rounded">
                 <p className="text-green-800">
-                  <strong>✓ Acknowledgment:</strong> By using Shopki, you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions in their entirety.
+                  <strong>✓ Acknowledgment:</strong> By using Aruviah, you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions in their entirety.
                 </p>
               </div>
             </div>

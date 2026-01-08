@@ -163,7 +163,8 @@ export const sendOrderStatusEmail = async (userEmail, userName, orderId, newStat
           'Content-Type': 'application/json'
         }
       }
-    );    return { success: true, message: `Email notification sent to ${userEmail}` };
+    );
+    return { success: true, message: `Email notification sent to ${userEmail}` };
 
   } catch (error) {
     console.error('❌ Error sending email:', error.message);
@@ -265,9 +266,9 @@ export const sendOrderConfirmationEmail = async (userEmail, userName, orderId, i
             </div>
             
             <div class="footer">
-              <p>Thank you for shopping with Shopki!</p>
-              <p>© 2025 Shopki. All rights reserved.</p>
-              <p>support@shopki.com</p>
+              <p>Thank you for shopping with Aruviah!</p>
+              <p>© 2025 Aruviah. All rights reserved.</p>
+              <p>support@aruviah.com</p>
             </div>
           </div>
         </body>
@@ -287,7 +288,8 @@ export const sendOrderConfirmationEmail = async (userEmail, userName, orderId, i
           'Content-Type': 'application/json'
         }
       }
-    );    return { success: true, message: `Confirmation email sent to ${userEmail}` };
+    );
+    return { success: true, message: `Confirmation email sent to ${userEmail}` };
 
   } catch (error) {
     console.error('❌ Error sending confirmation email:', error.message);
@@ -312,7 +314,8 @@ export const sendNotificationEmail = async (userEmail, subject, content) => {
           'Content-Type': 'application/json'
         }
       }
-    );    return { success: true, message: `Email sent to ${userEmail}` };
+    );
+    return { success: true, message: `Email sent to ${userEmail}` };
 
   } catch (error) {
     console.error('❌ Error sending notification email:', error.message);
