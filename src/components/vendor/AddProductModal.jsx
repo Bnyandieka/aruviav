@@ -130,28 +130,13 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, editi
         updatedAt: new Date().toISOString(),
         createdAt: editingProduct ? editingProduct.createdAt : new Date().toISOString(),
         sold: editingProduct?.sold || 0
-      };
-
-      console.log('💾 AddProductModal.handleSubmit: Saving product');
-      console.log('   VendorId:', productData.vendorId);
-      console.log('   Product Name:', productData.name);
-      console.log('   Category:', productData.category);
-      console.log('   Stock:', productData.stock);
-      console.log('   Images array:', productData.images);
-      console.log('   Full Product Data:', productData);
-
-      if (editingProduct) {
+      };      if (editingProduct) {
         // Update existing product
         const productRef = doc(db, 'products', editingProduct.id);
-        await updateDoc(productRef, productData);
-        console.log('✏️ AddProductModal: Product updated successfully, ID:', editingProduct.id);
-        toast.success('✅ Product updated successfully!');
+        await updateDoc(productRef, productData);        toast.success('✅ Product updated successfully!');
       } else {
         // Add new product
-        const docRef = await addDoc(collection(db, 'products'), productData);
-        console.log('✅ AddProductModal: New product added successfully, ID:', docRef.id);
-        console.log('   Check Firestore Console at: https://console.firebase.google.com/project/YOUR_PROJECT/firestore/data/products/' + docRef.id);
-        toast.success('✅ Product added successfully!');
+        const docRef = await addDoc(collection(db, 'products'), productData);        toast.success('✅ Product added successfully!');
       }
 
       resetForm();

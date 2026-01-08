@@ -16,20 +16,14 @@ async function testCreateEmail() {
       timestamp: new Date().toISOString()
     },
     isSent: false
-  });
-  
-  console.log('Test email result:', result);
-  return result;
+  });  return result;
 }
 
 // Test 2: Fetch emails from admin inbox
 async function testFetchEmails(section = 'all') {
   const { getEmailsBySection } = await import('./src/services/email/adminEmailService');
   
-  const result = await getEmailsBySection(section, 100);
-  
-  console.log(`Emails in '${section}' section:`, result);
-  return result;
+  const result = await getEmailsBySection(section, 100);  return result;
 }
 
 // Test 3: Check Firestore directly
@@ -43,13 +37,7 @@ async function testFirestore() {
       orderBy('createdAt', 'desc')
     );
     
-    const snapshot = await getDocs(q);
-    
-    console.log('Total emails in Firestore:', snapshot.size);
-    console.log('Emails:', snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    })));
+    const snapshot = await getDocs(q);    })));
     
     return snapshot;
   } catch (error) {
@@ -71,15 +59,10 @@ async function testSendEmail() {
     relatedData: {
       test: true
     }
-  });
-  
-  console.log('Send email result:', result);
-  return result;
+  });  return result;
 }
 
-// Run tests:
-console.log('=== EMAIL SYSTEM TESTS ===');
-console.log('1. testCreateEmail() - Create test email');
+// Run tests:console.log('1. testCreateEmail() - Create test email');
 console.log('2. testFetchEmails("all") - Fetch all emails');
 console.log('3. testFirestore() - Check Firestore directly');
 console.log('4. testSendEmail() - Test email sending');

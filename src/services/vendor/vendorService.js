@@ -302,12 +302,10 @@ export const getVendorProfile = async (userId) => {
 export const getVendorProducts = async (vendorId) => {
   try {
     if (!vendorId) {
-      console.error('❌ getVendorProducts: Vendor ID is required');
+      console.error('Vendor ID is required');
       return [];
     }
 
-    console.log('🔍 getVendorProducts: Starting query for vendorId:', vendorId);
-    
     // Note: Composite index required for where + orderBy
     // Create index at: https://console.firebase.google.com/project/eccomerce-768db/firestore/indexes
     const q = query(
@@ -317,25 +315,21 @@ export const getVendorProducts = async (vendorId) => {
       // orderBy('createdAt', 'desc')
     );
 
-    console.log('🔄 getVendorProducts: Query created, executing getDocs...');
     const snapshot = await getDocs(q);
-    console.log('📊 getVendorProducts: Query returned', snapshot.size, 'documents');
     
     const products = [];
     
     snapshot.forEach(doc => {
       const productData = doc.data();
-      console.log('📦 Product found - ID:', doc.id, 'Name:', productData.name, 'VendorId:', productData.vendorId, 'Images:', productData.images?.length || 0);
       products.push({
         id: doc.id,
         ...productData
       });
     });
 
-    console.log('✅ getVendorProducts: Returning', products.length, 'products');
     return products;
   } catch (error) {
-    console.error('❌ getVendorProducts: Error:', error.code, error.message);
+    console.error('Error fetching vendor products:', error);
     return [];
   }
 };
@@ -434,14 +428,14 @@ export const confirmVendorOrder = async (orderId, vendorId) => {
  * @returns {Object} - Sales summary data
  */
 export const getVendorSalesSummary = async (vendorId) => {
-  try {
-    // Get all orders for vendor
+  try {    // Get all orders for vendor
     const ordersQuery = query(
       collection(db, 'orders'),
       where('vendorId', '==', vendorId)
     );
 
     const ordersSnapshot = await getDocs(ordersQuery);
+    
     let totalSales = 0;
     let totalOrders = 0;
     let totalAmount = 0;
@@ -457,7 +451,8 @@ export const getVendorSalesSummary = async (vendorId) => {
     ordersSnapshot.forEach(doc => {
       const order = doc.data();
       totalOrders++;
-      totalAmount += order.totalAmount || 0;
+      const orderAmount = order.totalAmount || order.total || 0;
+      totalAmount += orderAmount;
       
       const status = order.status || 'pending';
       if (statusCount[status] !== undefined) {
@@ -465,7 +460,7 @@ export const getVendorSalesSummary = async (vendorId) => {
       }
 
       if (order.status === 'completed' || order.status === 'shipped') {
-        totalSales += order.totalAmount || 0;
+        totalSales += orderAmount;
       }
     });
 
@@ -874,9 +869,7 @@ export const listenToVendorProducts = (vendorId, onProductsUpdate) => {
           id: doc.id,
           ...doc.data()
         });
-      });
-      console.log('📦 Real-time products update:', products.length, 'products');
-      onProductsUpdate(products);
+      });      onProductsUpdate(products);
     }, (error) => {
       console.error('Error in real-time product listener:', error);
     });
@@ -941,10 +934,7 @@ export const listenToVendorOrders = (vendorId, onOrdersUpdate) => {
         const allOrders = [...orders, ...ordersFromVendorIds].sort((a, b) => 
           (b.createdAt?.toDate?.() || new Date(b.createdAt)) - 
           (a.createdAt?.toDate?.() || new Date(a.createdAt))
-        );
-        
-        console.log('📦 Real-time orders update:', allOrders.length, 'orders for vendor', vendorId);
-        onOrdersUpdate(allOrders);
+        );        onOrdersUpdate(allOrders);
       }, (error) => {
         console.error('Error in real-time orders listener (vendorIds):', error);
       });
@@ -996,9 +986,7 @@ export const updateOrderStatus = async (orderId, newStatus, vendorId) => {
     // Call the main updateOrderStatus with vendorId for authorization
     const result = await updateOrderStatusFromFirestore(orderId, finalStatus, vendorId);
     
-    if (result.success) {
-      console.log('✅ Vendor order status updated:', orderId, 'to', finalStatus);
-    } else {
+    if (result.success) {    } else {
       console.error('❌ Failed to update vendor order:', result.error);
     }
     
@@ -1074,10 +1062,7 @@ export const listenToVendorAnalytics = (vendorId, onAnalyticsUpdate) => {
           totalProducts: productsSnapshot.size,
           statusCount,
           orders
-        };
-
-        console.log('📊 Real-time analytics update:', analytics);
-        onAnalyticsUpdate(analytics);
+        };        onAnalyticsUpdate(analytics);
       } catch (error) {
         console.error('Error processing analytics snapshot:', error);
       }

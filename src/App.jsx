@@ -1,9 +1,10 @@
 // src/App.jsx
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import initInspectorLock from './utils/inspectorLock';
 
 // Context Providers
 import { AuthProvider } from './context/AuthContext';
@@ -36,6 +37,7 @@ import FAQPage from './pages/FAQPage';
 import SeedDataPage from './pages/SeedDataPage';
 import ServicesPage from './pages/ServicesPage';
 import SellServicePage from './pages/SellServicePage';
+import EditServicePage from './pages/EditServicePage';
 import ServiceDetailsPage from './pages/ServiceDetailsPage';
 
 // Admin Pages
@@ -56,8 +58,10 @@ import NotificationContainer from './components/common/NotificationContainer';
 import './App.css';
 
 function App() {
-  console.log('API Key:', process.env.REACT_APP_BREVO_API_KEY);
-  console.log('Sender Email:', process.env.REACT_APP_BREVO_SENDER_EMAIL);
+  useEffect(() => {
+    // Initialize inspector lock on app load
+    initInspectorLock();
+  }, []);
 
   return (
     <Router>
@@ -116,6 +120,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <SellServicePage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/service/:id/edit"
+                  element={
+                    <ProtectedRoute>
+                      <EditServicePage />
                     </ProtectedRoute>
                   }
                 />

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
 import Breadcrumb from '../components/common/Breadcrumb/Breadcrumb';
+import PortfolioUpload from '../components/services/PortfolioUpload/PortfolioUpload';
 import { CATEGORIES } from '../utils/constants';
 import { createService } from '../services/firebase/firestoreHelpers';
 
@@ -45,13 +46,17 @@ const SellServicePage = () => {
 
     setLoading(true);
     try {
-      // Save service to Firebase
+      // Prepare service data
       const serviceData = {
         name: formData.name,
         description: formData.description,
         category: formData.category,
         price: parseFloat(formData.price),
         duration: formData.duration,
+        images: formData.images.map(img => ({
+          url: img.url,
+          name: img.name
+        })),
         sellerName: user.displayName || user.email || 'Service Provider',
         sellerEmail: user.email,
         sellerPhone: user.phone || '',
@@ -186,6 +191,13 @@ const SellServicePage = () => {
                 </select>
               </div>
             </div>
+
+            {/* Portfolio Upload */}
+            <PortfolioUpload
+              images={formData.images}
+              onImagesChange={(images) => setFormData(prev => ({ ...prev, images }))}
+              maxImages={5}
+            />
 
             {/* Info Box */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">

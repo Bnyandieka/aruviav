@@ -19,19 +19,12 @@ export default function VendorProducts() {
   const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
-    if (user) {
-      console.log('VendorProducts: User available, setting up real-time listener for:', user.uid);
-      
-      // Set up real-time listener for products
-      const unsubscribe = listenToVendorProducts(user.uid, (updatedProducts) => {
-        console.log('🔄 VendorProducts received real-time update:', updatedProducts.length, 'products');
-        setProducts(updatedProducts);
+    if (user) {      // Set up real-time listener for products
+      const unsubscribe = listenToVendorProducts(user.uid, (updatedProducts) => {        setProducts(updatedProducts);
       });
 
       // Cleanup listener on unmount
-      return () => {
-        console.log('VendorProducts: Cleaning up real-time listener');
-        unsubscribe();
+      return () => {        unsubscribe();
       };
     }
   }, [user]);
@@ -40,13 +33,9 @@ export default function VendorProducts() {
     filterProducts();
   }, [products, searchTerm]);
 
-  useEffect(() => {
-    console.log('VendorProducts: Products state changed:', products);
-  }, [products]);
+  useEffect(() => {  }, [products]);
 
-  const handleRefresh = () => {
-    console.log('🔄 VendorProducts: Manual refresh triggered');
-    toast.info('Products are updating in real-time. Last sync just now.');
+  const handleRefresh = () => {    toast.info('Products are updating in real-time. Last sync just now.');
   };
 
   const filterProducts = () => {
@@ -84,9 +73,7 @@ export default function VendorProducts() {
     setShowAddModal(true);
   };
 
-  const handleProductSaved = () => {
-    console.log('✅ Product saved - real-time listener will update automatically');
-  };
+  const handleProductSaved = () => {  };
 
   return (
     <div className="vendor-products-container">
@@ -130,9 +117,7 @@ export default function VendorProducts() {
       ) : (
         <>
           <div className="products-grid">
-            {filteredProducts.map(product => {
-              console.log('Rendering product card:', product.id, product.name, 'Images:', product.images);
-              return (
+            {filteredProducts.map(product => {              return (
               <div key={product.id} className="product-card">
                 <div className="product-image">
                   {product.images && product.images[0] ? (

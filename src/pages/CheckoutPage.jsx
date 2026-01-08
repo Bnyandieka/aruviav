@@ -87,13 +87,7 @@ const CheckoutPage = () => {
       }
 
       // Format phone number to M-Pesa format
-      const formattedPhone = formatPhoneNumber(phoneNumber);
-
-      console.log('📱 Initiating M-Pesa STK Push...');
-      console.log(`   Phone: ${formattedPhone}`);
-      console.log(`   Amount: KES ${total}`);
-
-      toast.info('📱 Sending M-Pesa prompt to your phone...', { autoClose: false });
+      const formattedPhone = formatPhoneNumber(phoneNumber);      toast.info('📱 Sending M-Pesa prompt to your phone...', { autoClose: false });
 
       // Call backend to initiate M-Pesa STK Push
       const result = await initiateMpesaPayment({
@@ -101,11 +95,7 @@ const CheckoutPage = () => {
         phoneNumber: formattedPhone
       });
 
-      if (result.success) {
-        console.log('✅ STK Push sent successfully');
-        console.log(`   Checkout ID: ${result.checkoutRequestId}`);
-        
-        setMpesaCheckoutId(result.checkoutRequestId);
+      if (result.success) {        setMpesaCheckoutId(result.checkoutRequestId);
         
         toast.success('✅ M-Pesa prompt sent! Please enter your PIN on your phone.', {
           autoClose: 5000
@@ -146,6 +136,7 @@ const CheckoutPage = () => {
         subtotal: cartTotal,
         shippingFee,
         total,
+        totalAmount: total,
         status: paymentMethod === 'cod' ? 'pending' : 'payment_pending',
         paymentStatus: 'pending',
         orderDate: new Date().toISOString()

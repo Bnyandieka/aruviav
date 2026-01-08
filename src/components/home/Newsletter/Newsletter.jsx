@@ -15,11 +15,7 @@ const Newsletter = ({ variant = 'full' }) => {
   const [subscribed, setSubscribed] = useState(false);
 
   const handleSubscribe = async (e) => {
-    e.preventDefault();
-
-    console.log('Form submitted with:', { email, firstName, lastName });
-
-    if (!email || !email.includes('@')) {
+    e.preventDefault();    if (!email || !email.includes('@')) {
       toast.error('Please enter a valid email address');
       return;
     }
@@ -38,11 +34,7 @@ const Newsletter = ({ variant = 'full' }) => {
         email,
         firstName: firstName.trim(),
         lastName: lastName.trim()
-      });
-
-      console.log('Brevo response:', result);
-
-      if (result.success) {
+      });      if (result.success) {
         // Send newsletter confirmation email using admin template
         await sendNewsletterConfirmation(email, firstName);
         

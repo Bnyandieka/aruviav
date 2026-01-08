@@ -72,10 +72,7 @@ export const getProducts = async (limitCount = null, filters = {}) => {
         id: doc.id,
         ...doc.data()
       });
-    });
-    
-    console.log(`✅ Fetched ${products.length} products`);
-    return { products, error: null };
+    });    return { products, error: null };
     
   } catch (error) {
     console.error('❌ Error fetching products:', error);
@@ -130,10 +127,7 @@ export const addProduct = async (productData) => {
       ...productData,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
-    });
-    
-    console.log('✅ Product added:', docRef.id);
-    return { productId: docRef.id, error: null };
+    });    return { productId: docRef.id, error: null };
     
   } catch (error) {
     console.error('❌ Error adding product:', error);
@@ -153,10 +147,7 @@ export const updateProduct = async (productId, updates) => {
     await updateDoc(docRef, {
       ...updates,
       updatedAt: serverTimestamp()
-    });
-    
-    console.log('✅ Product updated:', productId);
-    return { success: true, error: null };
+    });    return { success: true, error: null };
     
   } catch (error) {
     console.error('❌ Error updating product:', error);
@@ -171,9 +162,7 @@ export const updateProduct = async (productId, updates) => {
  */
 export const deleteProduct = async (productId) => {
   try {
-    await deleteDoc(doc(db, 'products', productId));
-    console.log('✅ Product deleted:', productId);
-    return { success: true, error: null };
+    await deleteDoc(doc(db, 'products', productId));    return { success: true, error: null };
     
   } catch (error) {
     console.error('❌ Error deleting product:', error);
@@ -199,10 +188,7 @@ export const searchProducts = async (searchTerm) => {
       product.name?.toLowerCase().includes(searchLower) ||
       product.description?.toLowerCase().includes(searchLower) ||
       product.keywords?.some(keyword => keyword.toLowerCase().includes(searchLower))
-    );
-    
-    console.log(`✅ Found ${filtered.length} products matching "${searchTerm}"`);
-    return { products: filtered, error: null };
+    );    return { products: filtered, error: null };
     
   } catch (error) {
     console.error('❌ Error searching products:', error);
@@ -245,10 +231,7 @@ export const getCategories = async () => {
         id: doc.id,
         ...doc.data()
       });
-    });
-    
-    console.log(`✅ Fetched ${categories.length} categories`);
-    return { categories, error: null };
+    });    return { categories, error: null };
     
   } catch (error) {
     console.error('❌ Error fetching categories:', error);
@@ -306,10 +289,7 @@ export const getProductReviews = async (productId) => {
         id: doc.id,
         ...doc.data()
       });
-    });
-    
-    console.log(`✅ Fetched ${reviews.length} reviews`);
-    return { reviews, error: null };
+    });    return { reviews, error: null };
     
   } catch (error) {
     console.error('❌ Error fetching reviews:', error);
@@ -329,10 +309,7 @@ export const addReview = async (productId, reviewData) => {
       productId,
       ...reviewData,
       createdAt: serverTimestamp()
-    });
-    
-    console.log('✅ Review added:', docRef.id);
-    return { reviewId: docRef.id, error: null };
+    });    return { reviewId: docRef.id, error: null };
     
   } catch (error) {
     console.error('❌ Error adding review:', error);
@@ -354,10 +331,7 @@ export const createOrder = async (orderData) => {
       status: 'pending',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
-    });
-    
-    console.log('✅ Order created:', docRef.id);
-    return { orderId: docRef.id, error: null };
+    });    return { orderId: docRef.id, error: null };
     
   } catch (error) {
     console.error('❌ Error creating order:', error);
@@ -386,10 +360,7 @@ export const getUserOrders = async (userId) => {
         id: doc.id,
         ...doc.data()
       });
-    });
-    
-    console.log(`✅ Fetched ${orders.length} orders`);
-    return { orders, error: null };
+    });    return { orders, error: null };
     
   } catch (error) {
     console.error('❌ Error fetching orders:', error);
@@ -436,10 +407,7 @@ export const updateOrderStatus = async (orderId, status) => {
     await updateDoc(docRef, {
       status,
       updatedAt: serverTimestamp()
-    });
-    
-    console.log('✅ Order status updated:', orderId);
-    return { success: true, error: null };
+    });    return { success: true, error: null };
     
   } catch (error) {
     console.error('❌ Error updating order status:', error);

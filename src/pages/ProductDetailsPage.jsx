@@ -234,11 +234,7 @@ const ProductDetailsPage = () => {
       await updateDoc(productRef, {
         reviewCount: newReviewCount,
         rating: parseFloat(newRating.toFixed(1)),
-      });
-
-      console.log('Review submitted and saved:', newReview);
-      
-      addNotification({
+      });      addNotification({
         type: 'success',
         title: 'Review Submitted',
         message: 'Thank you for your review!',

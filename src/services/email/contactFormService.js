@@ -105,11 +105,7 @@ export const sendContactFormEmail = async (contactData) => {
       sender: { name: 'Aruviah Support', email: senderEmail },
       subject: confirmationSubject,
       htmlContent: userEmailContent
-    });
-
-    console.log('✅ Confirmation email sent to user');
-
-    // 2. Send notification email to admin
+    });    // 2. Send notification email to admin
     const adminEmailContent = `
       <html>
         <head>
@@ -160,11 +156,7 @@ export const sendContactFormEmail = async (contactData) => {
       sender: { name: 'Aruviah Contact Form', email: senderEmail },
       subject: `New Contact Form: ${subject || 'Contact Form Submission'}`,
       htmlContent: adminEmailContent
-    });
-
-    console.log('✅ Admin notification email sent');
-
-    // 3. Save to admin inbox for record
+    });    // 3. Save to admin inbox for record
     try {
       await saveEmailToAdminInbox({
         to: adminEmail,
@@ -178,9 +170,7 @@ export const sendContactFormEmail = async (contactData) => {
           senderEmail: email,
           senderPhone: phone || 'Not provided'
         }
-      });
-      console.log('✅ Email saved to admin inbox');
-    } catch (inboxError) {
+      });    } catch (inboxError) {
       console.warn('⚠️ Warning: Email sent but not saved to inbox:', inboxError.message);
       // Don't fail the entire process if inbox save fails
     }

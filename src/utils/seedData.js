@@ -501,20 +501,14 @@ const sampleProducts = [
 
 // Seed only categories
 export const seedCategories = async () => {
-  try {
-    console.log('📁 Seeding categories...');
-    
-    let addedCount = 0;
+  try {    let addedCount = 0;
     for (const category of categories) {
       await addDoc(collection(db, 'categories'), {
         ...category,
         createdAt: serverTimestamp()
       });
       addedCount++;
-    }
-    
-    console.log(`✅ ${addedCount} categories seeded!`);
-    return {
+    }    return {
       success: true,
       message: `Successfully added ${addedCount} categories to the database.`
     };
@@ -530,10 +524,7 @@ export const seedCategories = async () => {
 
 // Seed only products
 export const seedProducts = async () => {
-  try {
-    console.log('📦 Seeding products...');
-    
-    let addedCount = 0;
+  try {    let addedCount = 0;
     for (const product of sampleProducts) {
       await addDoc(collection(db, 'products'), {
         ...product,
@@ -541,10 +532,7 @@ export const seedProducts = async () => {
         updatedAt: serverTimestamp()
       });
       addedCount++;
-    }
-    
-    console.log(`✅ ${addedCount} products seeded!`);
-    return {
+    }    return {
       success: true,
       message: `Successfully added ${addedCount} products to the database.`
     };
@@ -560,10 +548,7 @@ export const seedProducts = async () => {
 
 // Seed all data (categories + products)
 export const seedAllData = async () => {
-  try {
-    console.log('🌱 Starting database seeding...');
-
-    // Seed Categories first
+  try {    // Seed Categories first
     const categoriesResult = await seedCategories();
     if (!categoriesResult.success) {
       throw new Error('Failed to seed categories: ' + categoriesResult.error);
@@ -573,10 +558,7 @@ export const seedAllData = async () => {
     const productsResult = await seedProducts();
     if (!productsResult.success) {
       throw new Error('Failed to seed products: ' + productsResult.error);
-    }
-
-    console.log('🎉 Database seeding completed successfully!');
-    return {
+    }    return {
       success: true,
       message: `Successfully seeded ${categories.length} categories and ${sampleProducts.length} products!`
     };

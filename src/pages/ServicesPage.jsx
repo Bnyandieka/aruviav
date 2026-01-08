@@ -16,7 +16,7 @@ const ServicesPage = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
   const [categories, setCategories] = useState([]);
-  const [priceRange, setPriceRange] = useState([0, 100000]);
+  const [priceRange, setPriceRange] = useState([0, 1000000]);
   const [showMobileFilter, setShowMobileFilter] = useState(false);
 
   // Fetch all services
@@ -154,7 +154,7 @@ const ServicesPage = () => {
                   <input
                     type="range"
                     min="0"
-                    max="100000"
+                    max="1000000"
                     value={priceRange[1]}
                     onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
                     className="w-full"
@@ -249,7 +249,7 @@ const ServicesPage = () => {
                   <input
                     type="range"
                     min="0"
-                    max="100000"
+                    max="1000000"
                     value={priceRange[1]}
                     onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
                     className="w-full"
@@ -295,7 +295,7 @@ const ServicesPage = () => {
                   onClick={() => {
                     setSearchTerm('');
                     setSelectedCategory('all');
-                    setPriceRange([0, 100000]);
+                    setPriceRange([0, 1000000]);
                   }}
                   className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition"
                 >

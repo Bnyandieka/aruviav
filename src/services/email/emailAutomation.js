@@ -63,9 +63,7 @@ export const sendAccountConfirmationEmail = async (email, displayName, confirmat
       htmlContent
     });
 
-    if (result.success) {
-      console.log('✅ Account confirmation email sent to:', email);
-    } else {
+    if (result.success) {    } else {
       console.error('❌ Failed to send confirmation email:', result.error);
     }
 
@@ -128,9 +126,7 @@ export const sendNewsletterConfirmation = async (email, displayName) => {
       htmlContent
     });
 
-    if (result.success) {
-      console.log('✅ Newsletter confirmation email sent to:', email);
-    } else {
+    if (result.success) {    } else {
       console.error('❌ Failed to send newsletter confirmation:', result.error);
     }
 
@@ -151,9 +147,7 @@ export const sendOrderConfirmation = async (email, orderData) => {
   try {
     const result = await sendOrderConfirmationEmail(email, orderData);
 
-    if (result.success) {
-      console.log('✅ Order confirmation email sent for order:', orderData.id);
-      // Log email event for automation
+    if (result.success) {      // Log email event for automation
       logEmailEvent('order_confirmation', email, orderData.id);
     } else {
       console.error('❌ Failed to send order confirmation:', result.error);
@@ -176,9 +170,7 @@ export const sendOrderStatusUpdate = async (email, orderData) => {
   try {
     const result = await sendOrderStatusEmail(email, orderData);
 
-    if (result.success) {
-      console.log('✅ Order status email sent for order:', orderData.id);
-      // Log email event for automation
+    if (result.success) {      // Log email event for automation
       logEmailEvent('order_status_update', email, orderData.id);
     } else {
       console.error('❌ Failed to send order status email:', result.error);
@@ -226,9 +218,7 @@ export const sendPromotionalEmail = async (email, promoData) => {
       htmlContent
     });
 
-    if (result.success) {
-      console.log('✅ Promotional email sent to:', email);
-      logEmailEvent('promotional', email, promoData.campaignId);
+    if (result.success) {      logEmailEvent('promotional', email, promoData.campaignId);
     }
 
     return result;
@@ -276,9 +266,7 @@ export const sendAbandonedCartEmail = async (email, cartItems, cartTotal) => {
       htmlContent
     });
 
-    if (result.success) {
-      console.log('✅ Abandoned cart email sent to:', email);
-      logEmailEvent('abandoned_cart', email);
+    if (result.success) {      logEmailEvent('abandoned_cart', email);
     }
 
     return result;
@@ -296,10 +284,7 @@ export const sendAbandonedCartEmail = async (email, cartItems, cartTotal) => {
  */
 const logEmailEvent = (eventType, email, reference = null) => {
   try {
-    // Log to console for now
-    console.log(`📧 Email Event: ${eventType} | Email: ${email} | Reference: ${reference || 'N/A'}`);
-    
-    // In production, this could be sent to analytics service
+    // Log to console for now    // In production, this could be sent to analytics service
     // or stored in Firestore for automation tracking
   } catch (error) {
     console.error('Error logging email event:', error);
@@ -323,9 +308,7 @@ export const registerForNewsletter = async (email, displayName) => {
 
     if (subscriptionResult.success) {
       // Send confirmation email
-      await sendNewsletterConfirmation(email, displayName);
-      console.log('✅ User registered for newsletter:', email);
-      return { success: true };
+      await sendNewsletterConfirmation(email, displayName);      return { success: true };
     } else {
       console.error('❌ Failed to register for newsletter:', subscriptionResult.error);
       return subscriptionResult;

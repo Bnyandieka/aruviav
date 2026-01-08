@@ -44,10 +44,7 @@ export const CartProvider = ({ children }) => {
       ));
     } else {
       setCartItems([...cartItems, { ...product, quantity: 1 }]);
-    }
-    
-    console.log('✅ Added to cart:', product.name);
-    return { success: true };
+    }    return { success: true };
   };
 
   const removeFromCart = (productId) => {

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { FiShoppingCart, FiPackage, FiBarChart2, FiLogOut } from 'react-icons/fi';
+import { FiShoppingCart, FiPackage, FiBarChart2, FiLogOut, FiCalendar } from 'react-icons/fi';
 import VendorProducts from '../VendorProducts/VendorProducts';
 import VendorOrders from '../VendorOrders/VendorOrders';
 import VendorAnalytics from '../VendorAnalytics/VendorAnalytics';
+import VendorBookings from '../VendorBookings/VendorBookings';
 import './VendorDashboard.css';
 import { toast } from 'react-toastify';
 
@@ -75,6 +76,12 @@ export default function VendorDashboard() {
             <FiShoppingCart /> Orders
           </button>
           <button
+            className={`nav-item ${activeTab === 'bookings' ? 'active' : ''}`}
+            onClick={() => setActiveTab('bookings')}
+          >
+            <FiCalendar /> Bookings
+          </button>
+          <button
             className={`nav-item ${activeTab === 'analytics' ? 'active' : ''}`}
             onClick={() => setActiveTab('analytics')}
           >
@@ -93,6 +100,7 @@ export default function VendorDashboard() {
       <main className="vendor-main-content">
         {activeTab === 'products' && <VendorProducts />}
         {activeTab === 'orders' && <VendorOrders />}
+        {activeTab === 'bookings' && <VendorBookings />}
         {activeTab === 'analytics' && <VendorAnalytics />}
       </main>
     </div>

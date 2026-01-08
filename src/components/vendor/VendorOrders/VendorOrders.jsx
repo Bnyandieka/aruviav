@@ -14,19 +14,12 @@ export default function VendorOrders() {
   const [updatingOrderId, setUpdatingOrderId] = useState(null);
 
   useEffect(() => {
-    if (user) {
-      console.log('VendorOrders: Setting up real-time listener for orders:', user.uid);
-      
-      // Set up real-time listener for orders
-      const unsubscribe = listenToVendorOrders(user.uid, (updatedOrders) => {
-        console.log('🔄 VendorOrders received real-time update:', updatedOrders.length, 'orders');
-        setOrders(updatedOrders);
+    if (user) {      // Set up real-time listener for orders
+      const unsubscribe = listenToVendorOrders(user.uid, (updatedOrders) => {        setOrders(updatedOrders);
       });
 
       // Cleanup listener on unmount
-      return () => {
-        console.log('VendorOrders: Cleaning up real-time listener');
-        unsubscribe();
+      return () => {        unsubscribe();
       };
     }
   }, [user]);
@@ -35,9 +28,7 @@ export default function VendorOrders() {
     filterOrders();
   }, [orders, filterStatus]);
 
-  const handleRefresh = () => {
-    console.log('🔄 VendorOrders: Manual refresh triggered');
-    toast.info('Orders are updating in real-time. Last sync just now.');
+  const handleRefresh = () => {    toast.info('Orders are updating in real-time. Last sync just now.');
   };
 
   const filterOrders = () => {

@@ -18,14 +18,8 @@ const NotificationBell = () => {
 
   // Listen to order updates
   useEffect(() => {
-    if (!user?.uid) {
-      console.log('NotificationBell: No user logged in');
-      return;
-    }
-
-    console.log('NotificationBell: Listening to orders for user:', user.uid);
-
-    try {
+    if (!user?.uid) {      return;
+    }    try {
       const ordersRef = collection(db, 'orders');
       const q = query(
         ordersRef,
@@ -46,26 +40,11 @@ const NotificationBell = () => {
           currentOrders[doc.id] = orderData.status;
 
           // Check if this order status changed
-          const previousStatus = previousOrdersRef.current[doc.id];
-          console.log(`Order ${doc.id}:`, {
-            currentStatus: orderData.status,
-            previousStatus: previousStatus,
-            changed: previousStatus && previousStatus !== orderData.status
-          });
-
-          if (previousStatus && previousStatus !== orderData.status) {
-            // Order status changed - show toast notification
-            console.log('STATUS CHANGED! Showing notification...');
-            showOrderStatusNotification(orderData, orderData.status, previousStatus);
+          const previousStatus = previousOrdersRef.current[doc.id];          if (previousStatus && previousStatus !== orderData.status) {
+            // Order status changed - show toast notification            showOrderStatusNotification(orderData, orderData.status, previousStatus);
           } else if (!previousStatus) {
-            // First time loading this order, don't show notification
-            console.log('First time loading order:', doc.id);
-          }
-        });
-
-        console.log('Total orders loaded:', orders.length);
-        
-        // Sort by createdAt on client side
+            // First time loading this order, don't show notification          }
+        });        // Sort by createdAt on client side
         orders.sort((a, b) => {
           const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt) || new Date(0);
           const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt) || new Date(0);

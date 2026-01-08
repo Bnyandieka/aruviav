@@ -67,10 +67,7 @@ export const getProducts = async (limitCount = null, filters = {}) => {
         id: doc.id,
         ...doc.data()
       });
-    });
-    
-    console.log(`✅ Fetched ${products.length} products`);
-    return { products, error: null };
+    });    return { products, error: null };
     
   } catch (error) {
     console.error('❌ Error fetching products:', error);
@@ -123,10 +120,7 @@ export const getCategories = async () => {
         id: doc.id,
         ...doc.data()
       });
-    });
-    
-    console.log(`✅ Fetched ${categories.length} categories`);
-    return { categories, error: null };
+    });    return { categories, error: null };
     
   } catch (error) {
     console.error('❌ Error fetching categories:', error);
@@ -168,10 +162,7 @@ export const addProduct = async (productData) => {
       ...productData,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
-    });
-    
-    console.log('✅ Product added:', docRef.id);
-    return { productId: docRef.id, error: null };
+    });    return { productId: docRef.id, error: null };
     
   } catch (error) {
     console.error('❌ Error adding product:', error);
@@ -188,10 +179,7 @@ export const updateProduct = async (productId, updates) => {
     await updateDoc(docRef, {
       ...updates,
       updatedAt: serverTimestamp()
-    });
-    
-    console.log('✅ Product updated:', productId);
-    return { success: true, error: null };
+    });    return { success: true, error: null };
     
   } catch (error) {
     console.error('❌ Error updating product:', error);
@@ -204,9 +192,7 @@ export const updateProduct = async (productId, updates) => {
  */
 export const deleteProduct = async (productId) => {
   try {
-    await deleteDoc(doc(db, 'products', productId));
-    console.log('✅ Product deleted:', productId);
-    return { success: true, error: null };
+    await deleteDoc(doc(db, 'products', productId));    return { success: true, error: null };
     
   } catch (error) {
     console.error('❌ Error deleting product:', error);
@@ -230,10 +216,7 @@ export const searchProducts = async (searchTerm) => {
       product.name?.toLowerCase().includes(searchLower) ||
       product.description?.toLowerCase().includes(searchLower) ||
       product.keywords?.some(keyword => keyword.toLowerCase().includes(searchLower))
-    );
-    
-    console.log(`✅ Found ${filtered.length} products matching "${searchTerm}"`);
-    return { products: filtered, error: null };
+    );    return { products: filtered, error: null };
     
   } catch (error) {
     console.error('❌ Error searching products:', error);
@@ -274,10 +257,7 @@ export const getProductReviews = async (productId) => {
         id: doc.id,
         ...doc.data()
       });
-    });
-    
-    console.log(`✅ Fetched ${reviews.length} reviews`);
-    return { reviews, error: null };
+    });    return { reviews, error: null };
     
   } catch (error) {
     console.error('❌ Error fetching reviews:', error);
@@ -294,10 +274,7 @@ export const addReview = async (productId, reviewData) => {
       productId,
       ...reviewData,
       createdAt: serverTimestamp()
-    });
-    
-    console.log('✅ Review added:', docRef.id);
-    return { reviewId: docRef.id, error: null };
+    });    return { reviewId: docRef.id, error: null };
     
   } catch (error) {
     console.error('❌ Error adding review:', error);
@@ -311,10 +288,7 @@ export const addReview = async (productId, reviewData) => {
  */
 export const createOrder = async (orderData) => {
   try {
-    // Step 1: Validate stock for ALL items before creating order
-    console.log('🔍 Validating stock for all items...');
-    
-    const vendorIds = new Set(); // Support multiple vendors
+    // Step 1: Validate stock for ALL items before creating order    const vendorIds = new Set(); // Support multiple vendors
     const stockValidation = {};
     
     if (orderData.items && Array.isArray(orderData.items)) {
@@ -351,10 +325,7 @@ export const createOrder = async (orderData) => {
               // Collect vendor IDs
               if (productData.vendorId) {
                 vendorIds.add(productData.vendorId);
-              }
-              
-              console.log(`✅ Stock validated for product ${productId}: ${currentStock} >= ${quantity}`);
-            } else {
+              }            } else {
               return { orderId: null, error: `Product ${productId} not found` };
             }
           } catch (err) {
@@ -378,15 +349,7 @@ export const createOrder = async (orderData) => {
     };
     
     const docRef = await addDoc(collection(db, 'orders'), orderDoc);
-    const orderId = docRef.id;
-    
-    console.log(`✅ Order created: ${orderId}`);
-    console.log(`📌 Order linked to vendors:`, vendorIdArray);
-    
-    // Step 3: Update stock for all items (now safe since we validated)
-    console.log('📦 Updating product stock...');
-    
-    for (const item of orderData.items) {
+    const orderId = docRef.id;    // Step 3: Update stock for all items (now safe since we validated)    for (const item of orderData.items) {
       const productId = item.productId || item.id;
       const quantity = item.quantity || 1;
       
@@ -400,10 +363,7 @@ export const createOrder = async (orderData) => {
             stock: newStock,
             sold: (validation.productData.sold || 0) + quantity,
             updatedAt: serverTimestamp()
-          });
-          
-          console.log(`📦 Updated stock for product ${productId}: ${validation.currentStock} → ${newStock}`);
-          console.log(`📊 Updated sold count for product ${productId}: ${(validation.productData.sold || 0)} → ${(validation.productData.sold || 0) + quantity}`);
+          });          console.log(`📊 Updated sold count for product ${productId}: ${(validation.productData.sold || 0)} → ${(validation.productData.sold || 0) + quantity}`);
         } catch (err) {
           console.warn(`⚠️ Could not update stock for product ${productId}:`, err.message);
         }
@@ -445,11 +405,10 @@ export const getUserOrders = async (userId) => {
       return dateB - dateA;
     });
     
-    console.log(`✅ Fetched ${orders.length} orders`);
     return { orders, error: null };
     
   } catch (error) {
-    console.error('❌ Error fetching orders:', error);
+    console.error('Error fetching orders:', error);
     return { orders: [], error: error.message };
   }
 };
@@ -498,10 +457,7 @@ export const updateOrderStatus = async (orderId, status, vendorId = null) => {
       return { success: false, error: 'Order not found' };
     }
     
-    let orderData = orderSnap.data();
-    console.log('✅ Order found:', { userEmail: orderData.userEmail, userName: orderData.userName });
-    
-    // If vendorId is provided, verify vendor ownership
+    let orderData = orderSnap.data();    // If vendorId is provided, verify vendor ownership
     if (vendorId && orderData.vendorId && orderData.vendorId !== vendorId) {
       console.error('❌ Unauthorized: Vendor does not own this order');
       return { success: false, error: 'Unauthorized: This is not your order' };
@@ -516,10 +472,9 @@ export const updateOrderStatus = async (orderId, status, vendorId = null) => {
           const userData = userSnap.data();
           orderData.userEmail = userData.email;
           orderData.userName = userData.displayName || 'Customer';
-          console.log(`✅ Fetched user email from users collection: ${orderData.userEmail}`);
         }
       } catch (err) {
-        console.warn('⚠️ Could not fetch user data:', err.message);
+        console.warn('Could not fetch user data:', err.message);
       }
     }
     
@@ -527,25 +482,15 @@ export const updateOrderStatus = async (orderId, status, vendorId = null) => {
     await updateDoc(docRef, {
       status,
       updatedAt: serverTimestamp()
-    });
-    console.log(`✅ Status updated in Firestore for order ${orderId}`);
-    
-    // Send email notification to user
-    if (orderData.userEmail) {
-      console.log(`📧 Sending status update email to ${orderData.userEmail}...`);
-      const orderInfo = {
+    });    // Send email notification to user
+    if (orderData.userEmail) {      const orderInfo = {
         id: orderId,
         status: status,
         trackingNumber: orderData.trackingNumber || null
       };
-      const emailResult = await sendOrderStatusUpdate(orderData.userEmail, orderInfo);
-      console.log('📧 Email result:', emailResult);
-    } else {
+      const emailResult = await sendOrderStatusUpdate(orderData.userEmail, orderInfo);    } else {
       console.warn('⚠️ No email found for order:', orderId);
-    }
-    
-    console.log('✅ Order status updated successfully:', orderId);
-    return { success: true, error: null };
+    }    return { success: true, error: null };
     
   } catch (error) {
     console.error('❌ Error updating order status:', error);

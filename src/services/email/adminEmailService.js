@@ -328,11 +328,7 @@ export const getEmailsBySection = async (section, limit = 100) => {
     );
 
     const snapshot = await getDocs(q);
-    let emails = [];
-
-    console.log(`📊 [${section}] Total emails in collection: ${snapshot.size}`);
-
-    snapshot.forEach(doc => {
+    let emails = [];    snapshot.forEach(doc => {
       const email = doc.data();
       emails.push({
         id: doc.id,
@@ -358,18 +354,11 @@ export const getEmailsBySection = async (section, limit = 100) => {
           emails = emails.filter(e => e.isDraft === true);
           break;
         case 'sent':
-          emails = emails.filter(e => e.isSent === true);
-          console.log(`✉️ [Sent] Found ${emails.length} sent emails`);
-          break;
+          emails = emails.filter(e => e.isSent === true);          break;
         case 'inbox':
         default:
-          emails = emails.filter(e => !e.isSnoozed && !e.isDraft && !e.isSent);
-          console.log(`📥 [Inbox] Found ${emails.length} inbox emails`);
-      }
-    }
-
-    console.log(`✅ [${section}] Returning ${emails.length} emails`);
-    return { success: true, emails: emails.slice(0, limit) };
+          emails = emails.filter(e => !e.isSnoozed && !e.isDraft && !e.isSent);      }
+    }    return { success: true, emails: emails.slice(0, limit) };
   } catch (error) {
     console.error('Error getting emails by section:', error);
     return { success: false, emails: [], error: error.message };

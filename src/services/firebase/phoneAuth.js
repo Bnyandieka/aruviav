@@ -16,13 +16,8 @@ let recaptchaVerifier = null;
  * Must be called before sendPhoneOTP
  */
 export const initRecaptchaVerifier = (containerId = 'recaptcha-container') => {
-  try {
-    console.log('📱 Initializing reCAPTCHA verifier...');
-    
-    // Check if already initialized
-    if (recaptchaVerifier) {
-      console.log('✅ reCAPTCHA already initialized, reusing existing verifier');
-      return recaptchaVerifier;
+  try {    // Check if already initialized
+    if (recaptchaVerifier) {      return recaptchaVerifier;
     }
 
     // Check if container exists
@@ -33,15 +28,9 @@ export const initRecaptchaVerifier = (containerId = 'recaptcha-container') => {
         `<div id="${containerId}" style="display: none;"></div>`;
       console.error(error);
       throw new Error(`reCAPTCHA container "${containerId}" not found in DOM`);
-    }
-
-    console.log(`✅ reCAPTCHA container found: #${containerId}`);
-
-    recaptchaVerifier = new RecaptchaVerifier(containerId, {
+    }    recaptchaVerifier = new RecaptchaVerifier(containerId, {
       'size': 'invisible',
-      'callback': (response) => {
-        console.log('✅ reCAPTCHA verified:', response);
-      },
+      'callback': (response) => {      },
       'expired-callback': () => {
         console.warn('⚠️ reCAPTCHA expired, clearing verifier');
         recaptchaVerifier = null;
@@ -50,10 +39,7 @@ export const initRecaptchaVerifier = (containerId = 'recaptcha-container') => {
         console.error('❌ reCAPTCHA error occurred');
         recaptchaVerifier = null;
       }
-    }, auth);
-
-    console.log('✅ reCAPTCHA verifier initialized successfully');
-    return recaptchaVerifier;
+    }, auth);    return recaptchaVerifier;
   } catch (error) {
     console.error('❌ Failed to initialize reCAPTCHA:', error);
     console.error('Error details:', error.message);
@@ -78,25 +64,13 @@ export const clearRecaptchaVerifier = () => {
  * @returns {Promise<string>} - Confirmation result
  */
 export const sendPhoneOTP = async (phoneNumber) => {
-  try {
-    console.log('📱 Sending OTP to:', phoneNumber);
-    
-    // Initialize reCAPTCHA if not already done
-    if (!recaptchaVerifier) {
-      console.log('⚙️ reCAPTCHA not initialized, initializing now...');
-      initRecaptchaVerifier();
-    }
-
-    console.log('🔐 Using reCAPTCHA for verification');
-
-    const confirmationResult = await signInWithPhoneNumber(
+  try {    // Initialize reCAPTCHA if not already done
+    if (!recaptchaVerifier) {      initRecaptchaVerifier();
+    }    const confirmationResult = await signInWithPhoneNumber(
       auth,
       phoneNumber,
       recaptchaVerifier
-    );
-
-    console.log('✅ OTP sent successfully to:', phoneNumber);
-    return confirmationResult;
+    );    return confirmationResult;
   } catch (error) {
     console.error('❌ Error sending OTP:', error);
     console.error('Error code:', error.code);
@@ -129,15 +103,8 @@ export const sendPhoneOTP = async (phoneNumber) => {
  * @returns {Promise<object>} - User credential
  */
 export const verifyPhoneOTP = async (confirmationResult, otp) => {
-  try {
-    console.log('🔐 Verifying OTP code...');
-
-    const userCredential = await confirmationResult.confirm(otp);
-    const user = userCredential.user;
-
-    console.log('✅ OTP verified successfully');
-
-    // Clear reCAPTCHA after successful verification
+  try {    const userCredential = await confirmationResult.confirm(otp);
+    const user = userCredential.user;    // Clear reCAPTCHA after successful verification
     clearRecaptchaVerifier();
 
     return user;
@@ -161,10 +128,7 @@ export const verifyPhoneOTP = async (confirmationResult, otp) => {
  * @returns {Promise<object>} - User data
  */
 export const completePhoneSignup = async (user, displayName) => {
-  try {
-    console.log('👤 Creating user profile for:', user.phoneNumber);
-
-    // Check if user already exists
+  try {    // Check if user already exists
     const userDocRef = doc(db, 'users', user.uid);
     const userDocSnap = await getDoc(userDocRef);
 
@@ -201,10 +165,7 @@ export const completePhoneSignup = async (user, displayName) => {
         phoneVerified: true
       };
       await setDoc(userDocRef, userData, { merge: true });
-    }
-
-    console.log('✅ User profile created/updated successfully');
-    return userData;
+    }    return userData;
   } catch (error) {
     console.error('❌ Error creating user profile:', error);
     throw new Error('Failed to create user profile');

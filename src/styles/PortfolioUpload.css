@@ -1,0 +1,232 @@
+/* Portfolio Upload Component Styles */
+
+.portfolio-upload {
+  margin-bottom: 2rem;
+}
+
+.upload-area {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.upload-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  background-color: #f9fafb;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-height: 200px;
+}
+
+.upload-label:hover:not(.disabled) {
+  border-color: #f97316;
+  background-color: #fffbf0;
+}
+
+.upload-label.uploading {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.upload-label.disabled {
+  pointer-events: none;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.upload-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.upload-icon {
+  color: #f97316;
+  font-size: 2rem;
+}
+
+.upload-icon.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.upload-label p {
+  margin: 0;
+  color: #374151;
+}
+
+.upload-label p.font-semibold {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.upload-label p.text-sm {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+/* Progress List */
+.progress-list {
+  space-y: 0.75rem;
+}
+
+.progress-item {
+  padding: 0.75rem;
+  background-color: #f9fafb;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+.progress-item p {
+  margin: 0 0 0.5rem 0;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background-color: #e5e7eb;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f97316, #fb923c);
+  transition: width 0.3s ease;
+  border-radius: 3px;
+}
+
+/* Images Grid */
+.images-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.image-card {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+  transition: all 0.2s ease;
+}
+
+.image-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.image-wrapper {
+  position: relative;
+  width: 100%;
+  padding-bottom: 100%;
+  overflow: hidden;
+  background-color: #e5e7eb;
+}
+
+.image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.image-card:hover .image-overlay {
+  opacity: 1;
+}
+
+.remove-btn {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.remove-btn:hover {
+  background-color: #dc2626;
+  transform: scale(1.1);
+}
+
+.image-label {
+  padding: 0.5rem;
+  text-align: center;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .upload-label {
+    padding: 2rem 1rem;
+    min-height: 150px;
+  }
+
+  .upload-icon {
+    font-size: 1.5rem;
+  }
+
+  .upload-label p.font-semibold {
+    font-size: 0.9rem;
+  }
+
+  .images-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 0.75rem;
+  }
+}
+
+/* Drag and Drop State */
+.upload-label.drag-over {
+  border-color: #f97316;
+  background-color: #fffbf0;
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.1);
+}
+
+/* Empty State */
+.upload-empty {
+  text-align: center;
+  padding: 2rem;
+  color: #9ca3af;
+}
+
+.upload-empty p {
+  margin: 0;
+  font-size: 0.9rem;
+}

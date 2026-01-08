@@ -1,7 +1,7 @@
 // src/components/products/ProductCard/ProductCard.jsx
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiHeart, FiShoppingCart, FiEye, FiStar } from 'react-icons/fi';
+import { FiHeart, FiShoppingCart, FiEye, FiStar, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { useAuth } from '../../../context/AuthContext';
 import { useCart } from '../../../context/CartContext';
 import { useNotifications } from '../../../context/NotificationContext';
@@ -13,6 +13,7 @@ const ProductCard = ({ product }) => {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [portfolioIndex, setPortfolioIndex] = useState(0);
 
   // Calculate discount percentage
   const discountPercent = product.originalPrice && product.price
@@ -67,7 +68,7 @@ const ProductCard = ({ product }) => {
       className="group bg-white rounded-lg shadow hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col h-full"
     >
       {/* Image Container */}
-      <div className="relative overflow-hidden bg-gray-100">
+      <div className="relative overflow-hidden bg-gray-100 group/image">
         {/* Discount Badge */}
         {discountPercent > 0 && (
           <div className="absolute top-2 left-2 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded z-10">
@@ -92,8 +93,51 @@ const ProductCard = ({ product }) => {
           />
         </div>
 
+        {/* Portfolio Album - Slides in on Hover */}
+        {product.images && product.images.length > 1 && (
+          <div className="absolute inset-0 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 translate-x-full group-hover/image:translate-x-0 transition-transform duration-500 ease-out flex items-center justify-center overflow-hidden">
+            <div className="w-full h-full flex items-center justify-between px-2">
+              {/* Previous Button */}
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  setPortfolioIndex((prev) => (prev - 1 + product.images.length) % product.images.length);
+                }}
+                className="p-2 bg-white/20 hover:bg-white/40 text-white rounded-full transition-all z-20"
+              >
+                <FiChevronLeft size={20} />
+              </button>
+
+              {/* Portfolio Image */}
+              <div className="flex-1 h-full flex items-center justify-center px-2">
+                <img
+                  src={product.images[portfolioIndex]}
+                  alt={`Portfolio ${portfolioIndex + 1}`}
+                  className="max-w-full max-h-full object-contain"
+                />
+              </div>
+
+              {/* Next Button */}
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  setPortfolioIndex((prev) => (prev + 1) % product.images.length);
+                }}
+                className="p-2 bg-white/20 hover:bg-white/40 text-white rounded-full transition-all z-20"
+              >
+                <FiChevronRight size={20} />
+              </button>
+
+              {/* Counter */}
+              <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 bg-black/60 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                {portfolioIndex + 1} / {product.images.length}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Hover Actions */}
-        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover/image:bg-opacity-40 transition-all duration-300 flex items-center justify-center gap-2 opacity-0 group-hover/image:opacity-100 z-10">
           <button
             onClick={handleWishlistToggle}
             className="bg-white text-gray-800 p-3 rounded-full hover:bg-orange-500 hover:text-white transition-all transform hover:scale-110"

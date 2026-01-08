@@ -1,6 +1,6 @@
 // Location: src/components/common/Header/Header.jsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   FiShoppingCart, 
@@ -17,6 +17,7 @@ import { signOutUser } from '../../../services/firebase/auth';
 import { getProducts } from '../../../services/firebase/firestoreHelpers';
 import { CATEGORIES } from '../../../utils/constants';
 import NotificationBell from './NotificationBell';
+import CustomerChats from '../../customer/CustomerChats/CustomerChats';
 import './Header.css';
 
 const Header = () => {
@@ -30,6 +31,8 @@ const Header = () => {
   const [allProducts, setAllProducts] = useState([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [showMessagesInDropdown, setShowMessagesInDropdown] = useState(false);
+  const userMenuRef = useRef(null);
 
   // Fetch all products on mount
   useEffect(() => {
@@ -39,6 +42,21 @@ const Header = () => {
     };
     fetchProducts();
   }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setUserMenuOpen(false);
+        setShowMessagesInDropdown(false);
+      }
+    };
+
+    if (userMenuOpen || showMessagesInDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [userMenuOpen, showMessagesInDropdown]);
 
   // Real-time search suggestions
   useEffect(() => {
@@ -168,7 +186,7 @@ const Header = () => {
               </Link>
 
               {/* User Menu */}
-              <div className="relative">
+              <div className="relative" ref={userMenuRef}>
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className="flex items-center gap-1 sm:gap-2 hover:text-orange-500 p-2 hover:bg-gray-100 rounded transition text-sm sm:text-base"
@@ -197,6 +215,19 @@ const Header = () => {
                         >
                           Orders
                         </Link>
+                        {!userData?.isVendor && (
+                          <button
+                            onClick={() => setShowMessagesInDropdown(!showMessagesInDropdown)}
+                            className="block w-full text-left px-3 sm:px-4 py-2 hover:bg-gray-100 text-sm"
+                          >
+                            💬 Messages
+                          </button>
+                        )}
+                        {showMessagesInDropdown && !userData?.isVendor && (
+                          <div className="border-t px-0 py-0 max-h-96 overflow-y-auto bg-gray-50">
+                            <CustomerChats />
+                          </div>
+                        )}
                         <Link
                           to="/wishlist"
                           className="block px-3 sm:px-4 py-2 hover:bg-gray-100 text-sm md:hidden"

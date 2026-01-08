@@ -1,0 +1,667 @@
+/* VendorBookings.css */
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  z-index: 1000;
+  padding: 20px;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.vendor-bookings-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.bookings-header {
+  margin-bottom: 30px;
+}
+
+.bookings-header h2 {
+  font-size: 28px;
+  font-weight: bold;
+  color: #1f2937;
+  margin: 0 0 8px 0;
+}
+
+.bookings-count {
+  color: #6b7280;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Filter Tabs */
+.bookings-filter-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+}
+
+.filter-tab {
+  padding: 10px 16px;
+  border: 2px solid #e5e7eb;
+  background: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  color: #6b7280;
+  transition: all 0.3s ease;
+}
+
+.filter-tab:hover {
+  border-color: #f97316;
+  color: #f97316;
+}
+
+.filter-tab.active {
+  background: #f97316;
+  color: white;
+  border-color: #f97316;
+}
+
+/* Bookings List */
+.bookings-list {
+  display: grid;
+  gap: 20px;
+}
+
+.booking-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.booking-card:hover {
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.15);
+  border-color: #f97316;
+}
+
+.booking-header {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: white;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.booking-title-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.booking-title-section h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.booking-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.booking-details {
+  padding: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.detail-section h4 {
+  font-size: 13px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 12px 0;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.detail-item.notes {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.detail-icon {
+  color: #f97316;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.detail-label {
+  font-weight: 600;
+  color: #374151;
+  min-width: 70px;
+}
+
+.detail-value {
+  color: #1f2937;
+  word-break: break-word;
+}
+
+.email-link,
+.phone-link {
+  color: #3b82f6;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.email-link:hover,
+.phone-link:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.notes-text {
+  background: #f9fafb;
+  padding: 10px;
+  border-left: 3px solid #f97316;
+  border-radius: 4px;
+  font-style: italic;
+  margin: 8px 0 0 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Booking Actions */
+.booking-actions {
+  padding: 15px 20px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.booking-actions button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.3s ease;
+}
+
+.btn-accept {
+  background: #22c55e;
+  color: white;
+}
+
+.btn-accept:hover:not(:disabled) {
+  background: #16a34a;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+.btn-reject {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-reject:hover:not(:disabled) {
+  background: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.btn-chat {
+  background: #3b82f6;
+  color: white;
+}
+
+.btn-chat:hover:not(:disabled) {
+  background: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6b7280;
+}
+
+.empty-state svg {
+  margin-bottom: 16px;
+  color: #d1d5db;
+}
+
+.empty-state p {
+  margin: 8px 0;
+  font-size: 16px;
+}
+
+.text-secondary {
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+/* Facebook-Style Chat Modal */
+.facebook-chat-modal {
+  background: white;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 5px 40px rgba(0, 0, 0, 0.16);
+  animation: slideUp 0.3s ease;
+  overflow: hidden;
+}
+
+/* Facebook Chat Header */
+.chat-header-facebook {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  background: white;
+}
+
+.chat-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.avatar-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.header-info h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #000;
+}
+
+.header-info .service-name {
+  margin: 2px 0 0 0;
+  font-size: 12px;
+  color: #65676b;
+}
+
+.btn-close-chat {
+  background: none;
+  border: none;
+  color: #65676b;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+
+.btn-close-chat:hover {
+  background-color: #f0f2f5;
+}
+
+/* Facebook Chat Messages */
+.chat-messages-facebook {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: white;
+}
+
+/* Scrollbar Styling */
+.chat-messages-facebook::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-messages-facebook::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-messages-facebook::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.chat-messages-facebook::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+.chat-loading,
+.chat-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #65676b;
+}
+
+.chat-empty-state svg {
+  margin-bottom: 12px;
+  color: #ccc;
+}
+
+.text-hint {
+  font-size: 12px;
+  color: #9ca3af;
+  margin: 4px 0 0 0;
+}
+
+.chat-message-bubble {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 2px;
+  animation: fadeIn 0.3s ease;
+}
+
+.chat-message-bubble.customer {
+  align-items: flex-start;
+}
+
+.chat-message-bubble.provider {
+  align-items: flex-end;
+}
+
+.message-text {
+  background: #e4e6eb;
+  color: #000;
+  padding: 8px 12px;
+  border-radius: 18px;
+  max-width: 85%;
+  word-break: break-word;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.chat-message-bubble.provider .message-text {
+  background: #0a84ff;
+  color: white;
+  border-radius: 18px;
+}
+
+.message-timestamp {
+  font-size: 11px;
+  color: #65676b;
+  margin-top: 2px;
+  padding: 0 12px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Facebook Chat Input */
+.chat-input-facebook {
+  padding: 12px 16px;
+  border-top: 1px solid #e5e7eb;
+  background: white;
+}
+
+.input-wrapper {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.message-input-facebook {
+  flex: 1;
+  padding: 10px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 20px;
+  font-size: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+  outline: none;
+  transition: all 0.2s ease;
+  background: #f0f2f5;
+  color: #000;
+}
+
+.message-input-facebook:focus {
+  background: white;
+  border-color: #0a84ff;
+  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.1);
+}
+
+.message-input-facebook::placeholder {
+  color: #65676b;
+}
+
+.message-input-facebook:disabled {
+  background: #f0f2f5;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.btn-send-facebook {
+  background: none;
+  border: none;
+  color: #0a84ff;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.btn-send-facebook:hover:not(:disabled) {
+  background-color: #f0f2f5;
+}
+
+.btn-send-facebook:disabled {
+  color: #ccc;
+  cursor: not-allowed;
+}
+
+.spinner-small {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #e5e7eb;
+  border-top-color: #0a84ff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e5e7eb;
+  border-top-color: #f97316;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 20px auto;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .vendor-bookings-container {
+    padding: 15px;
+  }
+
+  .bookings-header h2 {
+    font-size: 22px;
+  }
+
+  .booking-details {
+    grid-template-columns: 1fr;
+    padding: 15px;
+  }
+
+  .booking-actions {
+    flex-direction: column;
+  }
+
+  .booking-actions button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .facebook-chat-modal {
+    max-width: 100%;
+    max-height: 90vh;
+  }
+
+  .message-text {
+    max-width: 95%;
+  }
+
+  .bookings-filter-tabs {
+    overflow-x: auto;
+    gap: 8px;
+  }
+
+  .filter-tab {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .modal-overlay {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .booking-header {
+    padding: 15px;
+  }
+
+  .booking-title-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .booking-title-section h3 {
+    font-size: 16px;
+  }
+
+  .booking-status {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .detail-item {
+    font-size: 13px;
+  }
+
+  .detail-label {
+    min-width: 60px;
+  }
+
+  .chat-header-facebook {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .btn-close-chat {
+    align-self: flex-start;
+  }
+
+  .chat-messages-facebook {
+    padding: 12px;
+  }
+
+  .chat-input-facebook {
+    padding: 10px 12px;
+  }
+
+  .input-wrapper {
+    flex-direction: column;
+  }
+
+  .btn-send-facebook {
+    width: 100%;
+  }
+
+  .facebook-chat-modal {
+    max-width: 100%;
+    border-radius: 0;
+  }
+
+  .modal-overlay {
+    padding: 0;
+  }
+}

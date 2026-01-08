@@ -68,9 +68,7 @@ export default function AdminEmailInbox() {
   ];
 
   // Load emails when section changes
-  useEffect(() => {
-    console.log('📧 AdminEmailInbox mounted/section changed:', currentSection);
-    fetchEmailsBySection();
+  useEffect(() => {    fetchEmailsBySection();
   }, [currentSection]);
 
   // Filter emails based on search and sort
@@ -98,13 +96,9 @@ export default function AdminEmailInbox() {
 
   const fetchEmailsBySection = async () => {
     setLoading(true);
-    try {
-      console.log(`🔄 Fetching emails for section: ${currentSection}`);
-      const result = await getEmailsBySection(currentSection, 100);
+    try {      const result = await getEmailsBySection(currentSection, 100);
 
-      if (result.success) {
-        console.log(`✅ Successfully loaded ${result.emails.length} emails`);
-        setEmails(result.emails);
+      if (result.success) {        setEmails(result.emails);
         
         // Calculate email counts for all sections
         const allEmailsResult = await getEmailsBySection('all', 1000);

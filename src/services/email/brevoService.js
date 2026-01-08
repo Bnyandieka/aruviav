@@ -92,14 +92,7 @@ export const sendTransactionalEmail = async ({
   relatedData = {}
 }) => {
   try {
-    const brevoClient = getBrevClient();
-    
-    console.log('📧 Sending email via Brevo:');
-    console.log('   To:', email);
-    console.log('   From:', senderEmail);
-    console.log('   API Key Set:', !!process.env.REACT_APP_BREVO_API_KEY);
-    
-    const response = await brevoClient.post('/smtp/email', {
+    const brevoClient = getBrevClient();    const response = await brevoClient.post('/smtp/email', {
       to: [{ email }],
       sender: { 
         name: senderName, 
@@ -107,11 +100,7 @@ export const sendTransactionalEmail = async ({
       },
       subject,
       htmlContent
-    });
-    
-    console.log('✅ Email sent successfully:', response.data.messageId);
-    
-    // Save to admin inbox if enabled
+    });    // Save to admin inbox if enabled
     let adminSaveResult = null;
     if (saveToAdminInbox) {
       try {
@@ -125,9 +114,7 @@ export const sendTransactionalEmail = async ({
           isSent: true // Mark as sent email
         });
         
-        if (adminSaveResult.success) {
-          console.log('✅ Email also saved to admin inbox:', adminSaveResult.emailId);
-        } else {
+        if (adminSaveResult.success) {        } else {
           console.error('❌ Failed to save to admin inbox:', adminSaveResult.error);
         }
       } catch (saveError) {
@@ -196,10 +183,7 @@ export const subscribeToNewsletter = async ({ email, firstName = '', lastName = 
       lastName,
       listIds: [parseInt(listId)],
       updateEnabled: true
-    });
-    
-    console.log('✅ Newsletter subscription successful:', email);
-    return { success: true, contactId: response.data.id };
+    });    return { success: true, contactId: response.data.id };
   } catch (error) {
     console.error('❌ Brevo subscription error:', error.response?.data || error.message);
     return { 
@@ -658,11 +642,7 @@ export const getNewsletterSubscribers = async (listId = null, limit = 500, offse
         offset,
         sort: 'desc'
       }
-    });
-
-    console.log(`✅ Fetched ${response.data.contacts?.length || 0} newsletter subscribers`);
-    
-    return { 
+    });    return { 
       success: true, 
       contacts: response.data.contacts || [],
       totalCount: response.data.count || 0,

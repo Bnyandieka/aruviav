@@ -11,6 +11,7 @@ import ProductImageUpload from '../../components/admin/Products/ProductImageUplo
 import AdminSettings from '../../components/admin/AdminSettings/AdminSettings';
 import { updateOrderStatus } from '../../services/firebase/firestoreHelpers';
 import { sendOrderStatusUpdate } from '../../services/email/emailAutomation';
+import { sendTransactionalEmail } from '../../services/email/brevoService';
 import { toast } from 'react-toastify';
 
 const AdminDashboard = () => {
@@ -34,6 +35,8 @@ const AdminDashboard = () => {
   const [memberSearchTerm, setMemberSearchTerm] = useState('');
   const [memberRoleFilter, setMemberRoleFilter] = useState('all');
   const [updatingMemberId, setUpdatingMemberId] = useState(null);
+  const [productSearchTerm, setProductSearchTerm] = useState('');
+  const [filteredProducts, setFilteredProducts] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -73,6 +76,23 @@ const AdminDashboard = () => {
 
     setFilteredMembers(filtered);
   }, [members, memberSearchTerm, memberRoleFilter]);
+
+  // Filter products based on search term
+  useEffect(() => {
+    let filtered = products;
+
+    if (productSearchTerm.trim()) {
+      const searchLower = productSearchTerm.toLowerCase();
+      filtered = filtered.filter(product =>
+        product.name.toLowerCase().includes(searchLower) ||
+        product.description?.toLowerCase().includes(searchLower) ||
+        product.category?.toLowerCase().includes(searchLower) ||
+        product.id?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    setFilteredProducts(filtered);
+  }, [products, productSearchTerm]);
 
   // Filter orders based on search term, status, and date
   useEffect(() => {
@@ -194,9 +214,7 @@ const AdminDashboard = () => {
           return dateB - dateA;
         });
         
-        setOrders(ordersData);
-        console.log('📊 Orders updated in real-time:', ordersData.length);
-      });
+        setOrders(ordersData);      });
 
       // Fetch all orders once (for initial data)
       const ordersSnap = await getDocs(ordersRef);
@@ -443,19 +461,92 @@ const AdminDashboard = () => {
   const handleVerificationToggle = async (memberId, currentStatus) => {
     setUpdatingMemberId(memberId);
     try {
+      // Get member details before updating
       const memberRef = doc(db, 'users', memberId);
+      const memberSnap = await getDoc(memberRef);
+      const memberData = memberSnap.data();
+
+      const isNowVerified = !currentStatus;
+
       await updateDoc(memberRef, {
-        verified: !currentStatus,
-        verifiedAt: !currentStatus ? new Date().toISOString() : null,
+        verified: isNowVerified,
+        verifiedAt: isNowVerified ? new Date().toISOString() : null,
         updatedAt: new Date().toISOString()
       });
       
+      // Send verification email if member is being verified
+      if (isNowVerified && memberData?.email) {
+        try {
+          const verificationEmailHtml = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <div style="background-color: #f97316; color: white; padding: 30px; text-align: center;">
+                <h1 style="margin: 0; font-size: 28px;">Account Verified! 🎉</h1>
+              </div>
+              <div style="background-color: #f9fafb; padding: 30px;">
+                <p style="color: #374151; font-size: 16px; line-height: 1.6;">
+                  Dear <strong>${memberData.displayName || 'Member'}</strong>,
+                </p>
+                <p style="color: #374151; font-size: 16px; line-height: 1.6;">
+                  Congratulations! Your account has been verified and is now active. You are now a verified member of our community.
+                </p>
+                <div style="background-color: white; border: 2px solid #f97316; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
+                  <p style="color: #f97316; font-size: 18px; font-weight: bold; margin: 0;">
+                    ✓ VERIFIED MEMBER
+                  </p>
+                </div>
+                <p style="color: #374151; font-size: 16px; line-height: 1.6;">
+                  <strong>What's Next?</strong>
+                </p>
+                <ul style="color: #374151; font-size: 16px; line-height: 1.8;">
+                  <li>Access all verified member features</li>
+                  <li>Browse products and services</li>
+                  <li>Make bookings and purchases</li>
+                  <li>Receive personalized recommendations</li>
+                </ul>
+                <p style="color: #374151; font-size: 16px; line-height: 1.6; margin-top: 20px;">
+                  Thank you for being part of our community!
+                </p>
+              </div>
+              <div style="background-color: #1f2937; color: white; padding: 20px; text-align: center; font-size: 12px;">
+                <p style="margin: 0; color: #9ca3af;">
+                  © ${new Date().getFullYear()} Shopki. All rights reserved.
+                </p>
+                <p style="margin: 10px 0 0 0; color: #9ca3af;">
+                  This is an automated message. Please do not reply to this email.
+                </p>
+              </div>
+            </div>
+          `;
+
+          const result = await sendTransactionalEmail({
+            email: memberData.email,
+            subject: '🎉 Your Account Has Been Verified - Welcome!',
+            htmlContent: verificationEmailHtml,
+            senderName: 'Shopki',
+            senderEmail: process.env.REACT_APP_BREVO_SENDER_EMAIL,
+            saveToAdminInbox: true,
+            emailType: 'account_verified',
+            relatedData: { 
+              userId: memberId, 
+              memberName: memberData.displayName,
+              verifiedAt: new Date().toISOString()
+            }
+          });
+
+          if (!result.success) {
+            console.error('Failed to send verification email:', result.error);
+          }
+        } catch (emailError) {
+          console.error('Error sending verification email:', emailError);
+        }
+      }
+      
       setMembers(members.map(member =>
         member.id === memberId 
-          ? { ...member, verified: !currentStatus, verifiedAt: !currentStatus ? new Date().toISOString() : null } 
+          ? { ...member, verified: isNowVerified, verifiedAt: isNowVerified ? new Date().toISOString() : null } 
           : member
       ));
-      toast.success(`Member ${!currentStatus ? 'verified' : 'unverified'} successfully`);
+      toast.success(`Member ${isNowVerified ? 'verified' : 'unverified'} successfully`);
     } catch (error) {
       toast.error('Error updating verification status');
       console.error('Error:', error);
@@ -966,16 +1057,27 @@ const AdminDashboard = () => {
 
         {/* Products List */}
         <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
-          <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">All Products ({products.length})</h2>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+            <h2 className="text-xl sm:text-2xl font-bold">All Products ({filteredProducts.length})</h2>
+            <input
+              type="text"
+              placeholder="Search products by name, category, or description..."
+              value={productSearchTerm}
+              onChange={(e) => setProductSearchTerm(e.target.value)}
+              className="w-full sm:w-64 px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 text-sm"
+            />
+          </div>
           
           {loading && products.length === 0 ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-4 border-orange-500 border-t-transparent mx-auto"></div>
               <p className="mt-4 text-gray-600 text-sm sm:text-base">Loading products...</p>
             </div>
-          ) : products.length === 0 ? (
+          ) : filteredProducts.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-gray-600 text-base sm:text-lg">No products yet. Add your first product!</p>
+              <p className="text-gray-600 text-base sm:text-lg">
+                {productSearchTerm ? 'No products match your search.' : 'No products yet. Add your first product!'}
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto -mx-4 sm:mx-0">
@@ -991,7 +1093,7 @@ const AdminDashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {products.map((product) => (
+                  {filteredProducts.map((product) => (
                     <tr key={product.id} className="border-b hover:bg-gray-50">
                       <td className="py-3 sm:py-4 px-3 sm:px-4">
                         <div className="flex items-center gap-2 sm:gap-3">

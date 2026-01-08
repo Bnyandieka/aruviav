@@ -163,10 +163,7 @@ export const sendOrderStatusEmail = async (userEmail, userName, orderId, newStat
           'Content-Type': 'application/json'
         }
       }
-    );
-
-    console.log('✅ Email sent successfully to:', userEmail);
-    return { success: true, message: `Email notification sent to ${userEmail}` };
+    );    return { success: true, message: `Email notification sent to ${userEmail}` };
 
   } catch (error) {
     console.error('❌ Error sending email:', error.message);
@@ -290,10 +287,7 @@ export const sendOrderConfirmationEmail = async (userEmail, userName, orderId, i
           'Content-Type': 'application/json'
         }
       }
-    );
-
-    console.log('✅ Confirmation email sent to:', userEmail);
-    return { success: true, message: `Confirmation email sent to ${userEmail}` };
+    );    return { success: true, message: `Confirmation email sent to ${userEmail}` };
 
   } catch (error) {
     console.error('❌ Error sending confirmation email:', error.message);
@@ -318,10 +312,7 @@ export const sendNotificationEmail = async (userEmail, subject, content) => {
           'Content-Type': 'application/json'
         }
       }
-    );
-
-    console.log('✅ Notification email sent to:', userEmail);
-    return { success: true, message: `Email sent to ${userEmail}` };
+    );    return { success: true, message: `Email sent to ${userEmail}` };
 
   } catch (error) {
     console.error('❌ Error sending notification email:', error.message);

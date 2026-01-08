@@ -15,7 +15,7 @@ export const ProductsPage = () => {
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'all');
   const [sortBy, setSortBy] = useState('newest');
   const [categories, setCategories] = useState([]);
-  const [priceRange, setPriceRange] = useState([0, 100000]);
+  const [priceRange, setPriceRange] = useState([0, 1000000]);
   const [showMobileFilter, setShowMobileFilter] = useState(false);
 
   // Fetch all products
@@ -213,7 +213,7 @@ export const ProductsPage = () => {
                   <input
                     type="range"
                     min="0"
-                    max="100000"
+                    max="1000000"
                     value={priceRange[1]}
                     onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
                     className="w-full"
@@ -231,7 +231,7 @@ export const ProductsPage = () => {
                   setSearchTerm('');
                   setSelectedCategory('all');
                   setSortBy('newest');
-                  setPriceRange([0, 100000]);
+                  setPriceRange([0, 1000000]);
                 }}
                 className="w-full px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition font-semibold text-sm"
               >
@@ -389,7 +389,7 @@ export const ProductsPage = () => {
                     <input
                       type="range"
                       min="0"
-                      max="100000"
+                      max="1000000"
                       value={priceRange[1]}
                       onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
                       className="w-full"
@@ -407,7 +407,7 @@ export const ProductsPage = () => {
                     setSearchTerm('');
                     setSelectedCategory('all');
                     setSortBy('newest');
-                    setPriceRange([0, 100000]);
+                    setPriceRange([0, 1000000]);
                     setShowMobileFilter(false);
                   }}
                   className="w-full px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition font-semibold text-sm"
@@ -448,7 +448,7 @@ export const ProductsPage = () => {
                   setSearchTerm('');
                   setSelectedCategory('all');
                   setSortBy('newest');
-                  setPriceRange([0, 100000]);
+                  setPriceRange([0, 1000000]);
                 }}
                 className="inline-flex items-center gap-2 bg-orange-500 text-white px-4 sm:px-6 py-2 sm:py-3 rounded hover:bg-orange-600 transition font-semibold text-xs sm:text-sm"
               >

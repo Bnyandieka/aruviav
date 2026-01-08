@@ -139,10 +139,7 @@ export const getFlashSaleEligibleProducts = async () => {
         ...p,
         score: calculateFlashSaleScore(p)
       }))
-      .sort((a, b) => b.score - a.score);
-
-    console.log(`✅ Found ${eligibleProducts.length} products eligible for flash sale`);
-    return { products: eligibleProducts, error: null };
+      .sort((a, b) => b.score - a.score);    return { products: eligibleProducts, error: null };
 
   } catch (error) {
     console.error('❌ Error getting flash sale eligible products:', error);
@@ -194,10 +191,7 @@ export const createAutoFlashSale = async (name = 'Auto Flash Sale', count = 10) 
       source: 'automatic'
     };
 
-    const docRef = await addDoc(flashSaleRef, flashSaleData);
-    
-    console.log('✅ Auto flash sale created:', docRef.id);
-    return { 
+    const docRef = await addDoc(flashSaleRef, flashSaleData);    return { 
       success: true, 
       flashSaleId: docRef.id,
       productCount: selectedProducts.length,
@@ -231,10 +225,7 @@ export const createManualFlashSale = async (name, description, productIds, durat
       source: 'manual'
     };
 
-    const docRef = await addDoc(flashSaleRef, flashSaleData);
-    
-    console.log('✅ Manual flash sale created:', docRef.id);
-    return { success: true, flashSaleId: docRef.id };
+    const docRef = await addDoc(flashSaleRef, flashSaleData);    return { success: true, flashSaleId: docRef.id };
 
   } catch (error) {
     console.error('❌ Error creating manual flash sale:', error);
@@ -262,10 +253,7 @@ export const getAllFlashSales = async (activeOnly = false) => {
         id: doc.id,
         ...doc.data()
       });
-    });
-
-    console.log(`✅ Retrieved ${flashSales.length} flash sales`);
-    return { flashSales, error: null };
+    });    return { flashSales, error: null };
 
   } catch (error) {
     console.error('❌ Error getting flash sales:', error);
@@ -310,10 +298,7 @@ export const updateFlashSale = async (flashSaleId, updates) => {
     await updateDoc(docRef, {
       ...updates,
       updatedAt: serverTimestamp()
-    });
-
-    console.log('✅ Flash sale updated:', flashSaleId);
-    return { success: true, error: null };
+    });    return { success: true, error: null };
 
   } catch (error) {
     console.error('❌ Error updating flash sale:', error);
@@ -338,9 +323,7 @@ export const endFlashSale = async (flashSaleId) => {
  */
 export const deleteFlashSale = async (flashSaleId) => {
   try {
-    await deleteDoc(doc(db, 'flashSales', flashSaleId));
-    console.log('✅ Flash sale deleted:', flashSaleId);
-    return { success: true, error: null };
+    await deleteDoc(doc(db, 'flashSales', flashSaleId));    return { success: true, error: null };
 
   } catch (error) {
     console.error('❌ Error deleting flash sale:', error);

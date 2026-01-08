@@ -41,11 +41,7 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Monitor auth state changes with real-time Firestore updates
-  useEffect(() => {
-    console.log('AuthProvider: Setting up auth listener');
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      console.log('Auth state changed:', currentUser?.email || 'No user');
-      setUser(currentUser);
+  useEffect(() => {    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {      setUser(currentUser);
       setIsAuthenticated(!!currentUser);
       
       if (currentUser) {
@@ -53,12 +49,8 @@ export const AuthProvider = ({ children }) => {
         const userDocRef = doc(db, 'users', currentUser.uid);
         const unsubscribeSnapshot = onSnapshot(userDocRef, (userDoc) => {
           if (userDoc.exists()) {
-            const data = userDoc.data();
-            console.log('User data updated:', data.email, { isVendor: data.isVendor });
-            setUserData(data);
-          } else {
-            console.log('User document does not exist');
-            setUserData(null);
+            const data = userDoc.data();            setUserData(data);
+          } else {            setUserData(null);
           }
         }, (error) => {
           console.error('Error listening to user data:', error);
@@ -130,18 +122,14 @@ export const AuthProvider = ({ children }) => {
 
       // Send email verification link
       try {
-        await sendEmailVerification(user);
-        console.log('✅ Verification email sent to:', email);
-      } catch (verificationError) {
+        await sendEmailVerification(user);      } catch (verificationError) {
         console.error('⚠️ Error sending verification email:', verificationError);
         // Don't fail signup if email fails
       }
 
       // Send account confirmation email with Brevo
       try {
-        await sendAccountConfirmationEmail(email, displayName);
-        console.log('✅ Welcome email sent to:', email);
-      } catch (emailError) {
+        await sendAccountConfirmationEmail(email, displayName);      } catch (emailError) {
         console.error('⚠️ Email service error (account still created):', emailError);
         // Don't fail signup if email fails
       }
@@ -214,9 +202,7 @@ export const AuthProvider = ({ children }) => {
 
         // Send welcome email
         try {
-          await sendAccountConfirmationEmail(user.email, user.displayName || 'User');
-          console.log('✅ Welcome email sent to:', user.email);
-        } catch (emailError) {
+          await sendAccountConfirmationEmail(user.email, user.displayName || 'User');        } catch (emailError) {
           console.error('⚠️ Email service error:', emailError);
         }
       }
@@ -245,9 +231,7 @@ export const AuthProvider = ({ children }) => {
   // Send OTP to phone number
   const sendPhoneVerificationOTP = async (phoneNumber) => {
     try {
-      const formattedPhone = formatPhoneNumber(phoneNumber);
-      console.log('📱 Sending OTP to:', formattedPhone);
-      const confirmationResult = await sendPhoneOTP(formattedPhone);
+      const formattedPhone = formatPhoneNumber(phoneNumber);      const confirmationResult = await sendPhoneOTP(formattedPhone);
       return { success: true, confirmationResult };
     } catch (error) {
       console.error('Error sending phone OTP:', error);
@@ -257,9 +241,7 @@ export const AuthProvider = ({ children }) => {
 
   // Verify OTP and complete phone authentication
   const verifyPhoneCode = async (confirmationResult, otp, displayName) => {
-    try {
-      console.log('🔐 Verifying phone code...');
-      const user = await verifyPhoneOTP(confirmationResult, otp);
+    try {      const user = await verifyPhoneOTP(confirmationResult, otp);
       
       // Complete signup - create user profile
       const userData = await completePhoneSignup(user, displayName);
@@ -272,9 +254,7 @@ export const AuthProvider = ({ children }) => {
       // Send welcome SMS/email if available
       try {
         if (user.email) {
-          await sendAccountConfirmationEmail(user.email, displayName);
-          console.log('✅ Welcome email sent');
-        }
+          await sendAccountConfirmationEmail(user.email, displayName);        }
       } catch (error) {
         console.warn('⚠️ Could not send welcome message:', error.message);
       }
@@ -298,11 +278,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     sendPhoneVerificationOTP,
     verifyPhoneCode
-  };
-
-  console.log('AuthProvider: Rendering, loading =', loading);
-
-  return (
+  };  return (
     <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
