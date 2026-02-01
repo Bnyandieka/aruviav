@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 const CartContext = createContext();
 
@@ -44,7 +44,8 @@ export const CartProvider = ({ children }) => {
       ));
     } else {
       setCartItems([...cartItems, { ...product, quantity: 1 }]);
-    }    return { success: true };
+    }
+    return { success: true };
   };
 
   const removeFromCart = (productId) => {
@@ -73,6 +74,19 @@ export const CartProvider = ({ children }) => {
     setCartItems([]);
   };
 
+  const restoreCart = useCallback((items) => {
+    try {
+      if (!items || !Array.isArray(items)) {
+        console.warn('⚠️ restoreCart: items is not a valid array', items);
+        return;
+      }
+      console.log('🔄 Restoring cart with', items.length, 'items:', items);
+      setCartItems(items);
+    } catch (err) {
+      console.warn('Could not restore cart from session:', err.message);
+    }
+  }, []);
+
   const cartTotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -83,6 +97,7 @@ export const CartProvider = ({ children }) => {
       removeFromCart,
       updateQuantity,
       clearCart,
+      restoreCart,
       cartTotal,
       cartCount
     }}>

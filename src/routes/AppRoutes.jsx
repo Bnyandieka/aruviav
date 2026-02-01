@@ -12,6 +12,7 @@ import LoginPage from '../pages/LoginPage';
 import SignupPage from '../pages/SignupPage';
 import ProfilePage from '../pages/ProfilePage';
 import OrdersPage from '../pages/OrdersPage';
+import OrderDetailPage from '../pages/OrderDetailPage';
 import WishlistPage from '../pages/WishlistPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import TermsAndConditionsPage from '../pages/TermsAndConditionsPage';
@@ -47,6 +48,7 @@ const AppRoutes = () => {
       <Route path="/order-success" element={<ProtectedRoute requireEmailVerification={true}><OrderSuccessPage /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute requireEmailVerification={false}><ProfilePage /></ProtectedRoute>} />
       <Route path="/orders" element={<ProtectedRoute requireEmailVerification={true}><OrdersPage /></ProtectedRoute>} />
+      <Route path="/orders/:id" element={<ProtectedRoute requireEmailVerification={true}><OrderDetailPage /></ProtectedRoute>} />
       <Route path="/wishlist" element={<ProtectedRoute requireEmailVerification={false}><WishlistPage /></ProtectedRoute>} />
       
       {/* 404 Page */}

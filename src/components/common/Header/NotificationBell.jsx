@@ -18,8 +18,10 @@ const NotificationBell = () => {
 
   // Listen to order updates
   useEffect(() => {
-    if (!user?.uid) {      return;
-    }    try {
+    if (!user?.uid) {
+      return;
+    }
+    try {
       const ordersRef = collection(db, 'orders');
       const q = query(
         ordersRef,
@@ -40,11 +42,15 @@ const NotificationBell = () => {
           currentOrders[doc.id] = orderData.status;
 
           // Check if this order status changed
-          const previousStatus = previousOrdersRef.current[doc.id];          if (previousStatus && previousStatus !== orderData.status) {
-            // Order status changed - show toast notification            showOrderStatusNotification(orderData, orderData.status, previousStatus);
+          const previousStatus = previousOrdersRef.current[doc.id];
+          if (previousStatus && previousStatus !== orderData.status) {
+            // Order status changed - show toast notification
+            showOrderStatusNotification(orderData, orderData.status, previousStatus);
           } else if (!previousStatus) {
-            // First time loading this order, don't show notification          }
-        });        // Sort by createdAt on client side
+            // First time loading this order, don't show notification
+          }
+        });
+        // Sort by createdAt on client side
         orders.sort((a, b) => {
           const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt) || new Date(0);
           const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt) || new Date(0);
@@ -77,7 +83,18 @@ const NotificationBell = () => {
       returned: '↩️ Order returned'
     };
 
-    const message = statusMessages[newStatus?.toLowerCase()] || `Order status updated to ${newStatus}`;
+    const normalizeStatus = (s) => {
+      if (!s && s !== 0) return '';
+      if (typeof s === 'string') return s;
+      if (typeof s === 'object') {
+        if (s.status) return String(s.status);
+        if (s.paymentStatus) return String(s.paymentStatus);
+      }
+      return String(s);
+    };
+
+    const statusKey = normalizeStatus(newStatus).toLowerCase();
+    const message = statusMessages[statusKey] || `Order status updated to ${normalizeStatus(newStatus)}`;
     
     toast.info(
       <div>
@@ -113,7 +130,8 @@ const NotificationBell = () => {
   };
 
   const getStatusIcon = (status) => {
-    switch (status?.toLowerCase()) {
+    const s = (status && typeof status === 'string') ? status.toLowerCase() : (typeof status === 'object' ? (status.status || status.paymentStatus || '') : String(status || '').toLowerCase());
+    switch (s) {
       case 'shipped':
         return <FiTruck className="text-blue-500" size={18} />;
       case 'delivered':
@@ -132,7 +150,8 @@ const NotificationBell = () => {
   };
 
   const getStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
+    const s = (status && typeof status === 'string') ? status.toLowerCase() : (typeof status === 'object' ? (status.status || status.paymentStatus || '') : String(status || '').toLowerCase());
+    switch (s) {
       case 'shipped':
         return 'text-blue-600';
       case 'delivered':

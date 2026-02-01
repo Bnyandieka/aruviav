@@ -92,7 +92,8 @@ export const sendTransactionalEmail = async ({
   relatedData = {}
 }) => {
   try {
-    const brevoClient = getBrevClient();    const response = await brevoClient.post('/smtp/email', {
+    const brevoClient = getBrevClient();
+    const response = await brevoClient.post('/smtp/email', {
       to: [{ email }],
       sender: { 
         name: senderName, 
@@ -100,7 +101,8 @@ export const sendTransactionalEmail = async ({
       },
       subject,
       htmlContent
-    });    // Save to admin inbox if enabled
+    });
+    // Save to admin inbox if enabled
     let adminSaveResult = null;
     if (saveToAdminInbox) {
       try {
@@ -114,7 +116,8 @@ export const sendTransactionalEmail = async ({
           isSent: true // Mark as sent email
         });
         
-        if (adminSaveResult.success) {        } else {
+        if (adminSaveResult.success) {
+        } else {
           console.error('❌ Failed to save to admin inbox:', adminSaveResult.error);
         }
       } catch (saveError) {
@@ -183,7 +186,8 @@ export const subscribeToNewsletter = async ({ email, firstName = '', lastName = 
       lastName,
       listIds: [parseInt(listId)],
       updateEnabled: true
-    });    return { success: true, contactId: response.data.id };
+    });
+    return { success: true, contactId: response.data.id };
   } catch (error) {
     console.error('❌ Brevo subscription error:', error.response?.data || error.message);
     return { 
@@ -642,7 +646,8 @@ export const getNewsletterSubscribers = async (listId = null, limit = 500, offse
         offset,
         sort: 'desc'
       }
-    });    return { 
+    });
+    return { 
       success: true, 
       contacts: response.data.contacts || [],
       totalCount: response.data.count || 0,

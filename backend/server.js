@@ -1,28 +1,73 @@
-// Backend API for handling emails with SendGrid
+// Backend API for handling emails with Brevo
 // Location: backend/server.js
 
 const express = require('express');
 const cors = require('cors');
-const sgMail = require('@sendgrid/mail');
+const axios = require('axios');
 require('dotenv').config();
 
 const app = express();
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+// Capture raw request body for webhook signature verification while still
+// populating `req.body` for downstream handlers.
+app.use(express.json({
+  verify: (req, res, buf, encoding) => {
+    if (buf && buf.length) req.rawBody = buf.toString(encoding || 'utf8');
+  }
+}));
 
-// Initialize SendGrid only if API key exists
-if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY !== 'your_sendgrid_api_key_here') {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);} else {
-  console.warn('⚠️ WARNING: SendGrid API key not configured');
-  console.warn('📧 Emails will be logged to console only');
-  console.warn('❌ To enable real email sending, update SENDGRID_API_KEY in backend/.env');
+// Keep a Firebase Admin instance optional for server-side Firestore updates from webhooks.
+let admin = null;
+let adminDb = null;
+try {
+  if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON || process.env.FIREBASE_SERVICE_ACCOUNT_PATH) {
+    let serviceAccount;
+    if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+      serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+    } else if (process.env.FIREBASE_SERVICE_ACCOUNT_PATH) {
+      // Support both relative and absolute paths
+      const path = require('path');
+      const filePath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH.startsWith('.')
+        ? path.resolve(__dirname, process.env.FIREBASE_SERVICE_ACCOUNT_PATH)
+        : process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
+      serviceAccount = require(filePath);
+    }
+
+    admin = require('firebase-admin');
+    if (!admin.apps.length) {
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount)
+      });
+      adminDb = admin.firestore();
+      console.log('✅ Firebase Admin initialized for webhook order updates');
+    }
+  }
+} catch (err) {
+  console.warn('⚠️ Firebase Admin not initialized. Set FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_SERVICE_ACCOUNT_PATH to enable server-side Firestore updates from webhooks.');
+  console.warn('Error details:', err.message);
 }
+
+// Initialize Brevo (using the same API as frontend)
+const BREVO_API_BASE = 'https://api.brevo.com/v3';
+const getBrevClient = () => {
+  const apiKey = process.env.REACT_APP_BREVO_API_KEY;
+  if (!apiKey) {
+    console.warn('⚠️ REACT_APP_BREVO_API_KEY is not set. Emails will be logged to console.');
+  }
+  return axios.create({
+    baseURL: BREVO_API_BASE,
+    headers: {
+      'api-key': apiKey,
+      'Content-Type': 'application/json'
+    }
+  });
+};
 
 /**
  * POST /api/send-email
- * Send email via SendGrid
+ * Send email via Brevo
  */
 app.post('/api/send-email', async (req, res) => {
   try {
@@ -34,38 +79,50 @@ app.post('/api/send-email', async (req, res) => {
         success: false,
         error: 'Missing required fields: to, subject, html'
       });
-    }    // Check if SendGrid is configured
-    if (!process.env.SENDGRID_API_KEY || process.env.SENDGRID_API_KEY === 'your_sendgrid_api_key_here') {
-      console.log('   Status: ⚠️ LOGGED TO CONSOLE (SendGrid not configured)');      return res.json({
+    }
+
+    const brevoClient = getBrevClient();
+    const apiKey = process.env.REACT_APP_BREVO_API_KEY;
+
+    // Check if Brevo is configured
+    if (!apiKey) {
+      console.log('   Status: ⚠️ LOGGED TO CONSOLE (Brevo not configured)');
+      return res.json({
         success: true,
-        message: `Email logged to console (SendGrid not configured). Recipient: ${to}`,
-        note: 'To send real emails, configure SENDGRID_API_KEY in backend/.env'
+        message: `Email logged to console (Brevo not configured). Recipient: ${to}`,
+        note: 'To send real emails, configure REACT_APP_BREVO_API_KEY in backend/.env'
       });
     }
 
     // Prepare email
+    const senderEmail = process.env.REACT_APP_BREVO_SENDER_EMAIL || 'support@shopki.com';
     const msg = {
-      to,
-      from: process.env.SENDGRID_FROM_EMAIL || 'support@shopki.com',
+      to: [{ email: to }],
+      sender: {
+        name: 'Shopki',
+        email: senderEmail
+      },
       subject,
-      html,
-      text: text || html.replace(/<[^>]*>/g, '') // Strip HTML if no text provided
+      htmlContent: html
     };
 
-    // Send email via SendGrid
-    await sgMail.send(msg);    res.json({
+    // Send email via Brevo
+    const response = await brevoClient.post('/smtp/email', msg);
+    
+    res.json({
       success: true,
-      message: `Email sent to ${to}`
+      message: `Email sent to ${to}`,
+      messageId: response.data.messageId
     });
 
   } catch (error) {
     console.error('❌ Error sending email:', error.message);
     
-    // Check if it's a SendGrid validation error
+    // Check if it's a Brevo API error
     if (error.response) {
       return res.status(error.response.status).json({
         success: false,
-        error: error.response.body?.errors?.[0]?.message || error.message
+        error: error.response.data?.message || error.message
       });
     }
 
@@ -144,12 +201,14 @@ app.post('/api/mpesa/initiate-payment', async (req, res) => {
     }
 
     // Check M-Pesa credentials
-    if (!process.env.MPESA_CONSUMER_KEY || process.env.MPESA_CONSUMER_KEY === 'your_key') {      return res.status(500).json({
+    if (!process.env.MPESA_CONSUMER_KEY || process.env.MPESA_CONSUMER_KEY === 'your_key') {
+      return res.status(500).json({
         success: false,
         error: 'M-Pesa payment not configured. Please contact admin.',
         message: 'M-Pesa API credentials missing in backend/.env'
       });
-    }    // Get access token
+    }
+    // Get access token
     const accessToken = await getMpesaAccessToken();
 
     // Prepare STK Push request
@@ -171,7 +230,8 @@ app.post('/api/mpesa/initiate-payment', async (req, res) => {
       CallBackURL: process.env.MPESA_CALLBACK_URL || 'https://your-domain/api/mpesa/callback',
       AccountReference: accountReference || `SHOPKI-${orderId}`,
       TransactionDesc: description || 'Shopki Order Payment'
-    };    // Send to M-Pesa
+    };
+    // Send to M-Pesa
     const mpesaResponse = await fetch(
       'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest',
       {
@@ -186,14 +246,16 @@ app.post('/api/mpesa/initiate-payment', async (req, res) => {
 
     const result = await mpesaResponse.json();
 
-    if (result.ResponseCode === '0') {      return res.json({
+    if (result.ResponseCode === '0') {
+      return res.json({
         success: true,
         checkoutRequestId: result.CheckoutRequestID,
         responseCode: result.ResponseCode,
         message: result.ResponseDescription || 'STK Push sent to phone',
         timestamp: new Date().toISOString()
       });
-    } else {      return res.status(400).json({
+    } else {
+      return res.status(400).json({
         success: false,
         error: result.ResponseDescription || 'Failed to initiate M-Pesa payment',
         responseCode: result.ResponseCode
@@ -279,29 +341,724 @@ app.get('/api/mpesa/payment-status/:checkoutRequestId', async (req, res) => {
  * M-Pesa callback endpoint (called by Safaricom)
  * This is called when payment succeeds or fails
  */
-app.post('/api/mpesa/callback', (req, res) => {
+app.post('/api/mpesa/callback', async (req, res) => {
   try {
-    const callbackData = req.body;    console.log(JSON.stringify(callbackData, null, 2));
+    const callbackData = req.body;
+    console.log('📱 M-Pesa Callback received:', JSON.stringify(callbackData, null, 2));
 
-    // Always respond with 200 OK to Safaricom
+    // Always respond with 200 OK to Safaricom immediately
     res.json({ ResultCode: 0, ResultDesc: 'Accepted' });
 
-    // Process callback data (in production, update Firestore with order status)
-    // This would:
-    // 1. Extract order ID from Body.stkCallback.CallbackMetadata
-    // 2. Update order status in Firestore to "completed"
-    // 3. Send confirmation email to user
-    // 4. Send admin notification
-
+    // Process callback data asynchronously
     const { Body } = callbackData;
     if (Body && Body.stkCallback) {
-      const { ResultCode, CheckoutRequestID, CallbackMetadata } = Body.stkCallback;      if (ResultCode === 0) {        // TODO: Update order status to 'paid' in Firestore
-      } else {        // TODO: Update order status to 'payment_failed' in Firestore
+      const { ResultCode, CheckoutRequestID, CallbackMetadata } = Body.stkCallback;
+      
+      // Extract order ID from callback metadata
+      let orderId = null;
+      if (CallbackMetadata && CallbackMetadata.Item) {
+        const accountRefItem = CallbackMetadata.Item.find(item => item.Name === 'AccountReference');
+        if (accountRefItem) {
+          orderId = accountRefItem.Value;
+        }
+      }
+      
+      if (!orderId) {
+        console.warn('⚠️ Could not extract order ID from M-Pesa callback');
+        return;
+      }
+
+      console.log(`📦 Processing callback for order: ${orderId}`);
+
+      // Handle successful payment
+      if (ResultCode === 0) {
+        console.log(`✅ Payment successful for order: ${orderId}`);
+        
+        // Extract payment ID (M-Pesa receipt number or checkout request ID)
+        const paymentId = CallbackMetadata?.Item?.find(item => item.Name === 'MpesaReceiptNumber')?.Value || CheckoutRequestID;
+        
+        // If Firebase Admin is configured, update Firestore
+        if (adminDb) {
+          try {
+            const orderRef = adminDb.collection('orders').doc(orderId);
+            const orderSnap = await orderRef.get();
+            
+            if (orderSnap.exists()) {
+              const orderData = orderSnap.data();
+              
+              // Update order status to 'processing' (not 'completed')
+              await orderRef.update({
+                paymentStatus: 'completed',
+                status: 'processing',
+                transactionId: paymentId,
+                paymentId: paymentId,
+                lastUpdated: new Date().toISOString()
+              });
+              
+              console.log(`📝 Order ${orderId} status updated to 'processing' in Firestore`);
+              
+              // Reduce stock after successful payment
+              try {
+                await reduceOrderStock(orderId, orderData);
+              } catch (stockError) {
+                console.error('❌ Error reducing stock after payment:', stockError.message);
+              }
+              
+              // Send payment confirmation email to customer
+              try {
+                const customerEmail = orderData.userEmail || orderData.email;
+                if (customerEmail) {
+                  await sendPaymentConfirmationEmail(
+                    customerEmail,
+                    orderId,
+                    orderData,
+                    paymentId
+                  );
+                }
+              } catch (emailError) {
+                console.error('❌ Failed to send payment confirmation email:', emailError.message);
+              }
+            } else {
+              console.warn(`⚠️ Order ${orderId} not found in Firestore`);
+            }
+          } catch (firestoreError) {
+            console.error('❌ Error updating Firestore order:', firestoreError.message);
+          }
+        } else {
+          console.warn('⚠️ Firebase Admin not configured - skipping Firestore update');
+          console.log(`🔔 Manually update order ${orderId} status to 'completed' in Firebase Console`);
+        }
+      } 
+      // Handle failed payment
+      else {
+        console.log(`❌ Payment failed for order: ${orderId} (ResultCode: ${ResultCode})`);
+        
+        if (adminDb) {
+          try {
+            const orderRef = adminDb.collection('orders').doc(orderId);
+            
+            // Update order status to failed (do NOT reduce stock)
+            await orderRef.update({
+              paymentStatus: 'failed',
+              status: 'payment_failed',
+              paymentError: `Payment failed with code: ${ResultCode}`,
+              lastUpdated: new Date().toISOString()
+            });
+            
+            console.log(`📝 Order ${orderId} status updated to 'payment_failed' in Firestore`);
+            console.log(`⚠️  Stock NOT reduced for failed payment (order: ${orderId})`);
+            
+            // Send payment failure email to customer
+            try {
+              const orderSnap = await orderRef.get();
+              const orderData = orderSnap.data();
+              const customerEmail = orderData.userEmail || orderData.email;
+              if (customerEmail) {
+                await sendPaymentFailureEmail(
+                  customerEmail,
+                  orderId,
+                  orderData,
+                  ResultCode
+                );
+              }
+            } catch (emailError) {
+              console.error('❌ Failed to send payment failure email:', emailError.message);
+            }
+          } catch (firestoreError) {
+            console.error('❌ Error updating Firestore order:', firestoreError.message);
+          }
+        }
       }
     }
   } catch (error) {
     console.error('M-Pesa callback error:', error);
-    res.status(500).json({ ResultCode: 1, ResultDesc: 'Error processing callback' });
+    // Still respond with 200 OK even if there's an error
+    res.json({ ResultCode: 0, ResultDesc: 'Accepted' });
+  }
+});
+
+/**
+ * Reduce stock for all items in an order after successful payment
+ */
+async function reduceOrderStock(orderId, orderData) {
+  if (!adminDb) {
+    console.warn('⚠️ Firebase Admin not configured - skipping stock reduction');
+    return;
+  }
+
+  try {
+    // Check if stock was already reduced (prevent double reduction)
+    const orderRef = adminDb.collection('orders').doc(orderId);
+    const orderSnap = await orderRef.get();
+    
+    if (orderSnap.exists() && orderSnap.data().stockReduced) {
+      console.log(`⏭️  Stock already reduced for order ${orderId}`);
+      return;
+    }
+
+    // Reduce stock for each item
+    if (orderData.items && Array.isArray(orderData.items)) {
+      for (const item of orderData.items) {
+        const productId = item.productId || item.id;
+        const quantity = item.quantity || 1;
+
+        if (productId) {
+          try {
+            const productRef = adminDb.collection('products').doc(productId);
+            const productSnap = await productRef.get();
+
+            if (productSnap.exists()) {
+              const productData = productSnap.data();
+              const currentStock = productData.stock || 0;
+              const newStock = Math.max(0, currentStock - quantity);
+
+              await productRef.update({
+                stock: newStock,
+                sold: (productData.sold || 0) + quantity,
+                updatedAt: new Date().toISOString()
+              });
+
+              console.log(`📊 Stock reduced for ${item.name}: ${currentStock} → ${newStock}`);
+            }
+          } catch (err) {
+            console.error(`❌ Error reducing stock for product ${productId}:`, err.message);
+          }
+        }
+      }
+    }
+
+    // Mark order as having stock reduced
+    await orderRef.update({
+      stockReduced: true,
+      updatedAt: new Date().toISOString()
+    });
+
+    console.log(`✅ Stock successfully reduced for order ${orderId}`);
+
+  } catch (error) {
+    console.error('❌ Error reducing stock after payment:', error.message);
+  }
+}
+
+/**
+ * Fetch email template from Firestore
+ */
+async function getEmailTemplate(templateType) {
+  try {
+    if (!adminDb) {
+      console.warn(`⚠️ Firebase Admin not configured - cannot fetch template: ${templateType}`);
+      return null;
+    }
+
+    const templateRef = admin.firestore().collection('emailTemplates').doc(templateType);
+    const templateSnap = await templateRef.get();
+
+    if (templateSnap.exists()) {
+      return templateSnap.data();
+    }
+    return null;
+  } catch (error) {
+    console.error(`Error fetching template ${templateType}:`, error.message);
+    return null;
+  }
+}
+
+/**
+ * Replace template variables with actual values
+ */
+function replaceTemplateVariables(template, variables) {
+  let result = template;
+  for (const [key, value] = Object.entries(variables)) {
+    const regex = new RegExp(`{{${key}}}`, 'g');
+    result = result.replace(regex, value || '');
+  }
+  return result;
+}
+
+/**
+ * Get Brevo client for sending emails
+ */
+function getBrevClient() {
+  return axios.create({
+    baseURL: 'https://api.brevo.com/v3',
+    headers: {
+      'api-key': process.env.REACT_APP_BREVO_API_KEY,
+      'Content-Type': 'application/json'
+    }
+  });
+}
+
+/**
+ * Send transactional email via Brevo
+ */
+async function sendTransactionalEmail({ email, subject, htmlContent }) {
+  try {
+    const brevoClient = getBrevClient();
+    const senderEmail = process.env.REACT_APP_BREVO_SENDER_EMAIL || 'orders@shopki.com';
+
+    if (!process.env.REACT_APP_BREVO_API_KEY) {
+      console.log('📧 Email would be sent to:', email);
+      console.log('📧 Subject:', subject);
+      console.log('📧 Status: ⚠️ LOGGED TO CONSOLE (Brevo not configured)');
+      return;
+    }
+
+    await brevoClient.post('/smtp/email', {
+      to: [{ email }],
+      sender: {
+        name: 'Shopki',
+        email: senderEmail
+      },
+      subject,
+      htmlContent
+    });
+
+    console.log(`✅ Email sent to ${email}`);
+  } catch (error) {
+    console.error('❌ Brevo email error:', error.response?.data || error.message);
+    throw error;
+  }
+}
+
+/**
+async function sendPaymentConfirmationEmail(customerEmail, orderId, orderData, paymentId) {
+  try {
+    // Build items table HTML
+    const itemsHtml = (orderData.items || []).map(item => `
+      <tr style="border-bottom: 1px solid #eee;">
+        <td style="padding: 12px; color: #333;">${item.name}</td>
+        <td style="padding: 12px; text-align: center; color: #666;">x${item.quantity || 1}</td>
+        <td style="padding: 12px; text-align: right; color: #ff9800; font-weight: 600;">KES ${((item.price || 0) * (item.quantity || 1)).toLocaleString()}</td>
+      </tr>
+    `).join('');
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: 'Arial', sans-serif; line-height: 1.6; color: #333;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #f9f9f9; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          
+          <!-- Header -->
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 20px; text-align: center;">
+            <h1 style="margin: 0; font-size: 28px;">Payment Successful! ✅</h1>
+            <p style="margin: 10px 0 0 0; font-size: 14px; opacity: 0.9;">Your order has been confirmed</p>
+          </div>
+
+          <!-- Main Content -->
+          <div style="padding: 30px;">
+            <h2 style="color: #333; margin: 0 0 20px 0;">Thank you for your purchase!</h2>
+            <p style="color: #666; margin: 0 0 20px 0;">Your payment has been processed successfully. Here's your order summary:</p>
+
+            <!-- Order Details -->
+            <div style="background-color: #f0f4ff; border-left: 4px solid #667eea; padding: 15px; margin-bottom: 20px;">
+              <p style="margin: 5px 0;"><strong>Order ID:</strong> ${orderId}</p>
+              <p style="margin: 5px 0;"><strong>Payment ID:</strong> ${paymentId || 'N/A'}</p>
+              <p style="margin: 5px 0;"><strong>Order Date:</strong> ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+              <p style="margin: 5px 0;"><strong>Status:</strong> <span style="color: #4CAF50; font-weight: bold;">PROCESSING</span></p>
+            </div>
+
+            <!-- Items Table -->
+            <h3 style="color: #333; margin: 20px 0 10px 0;">Order Items</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+              <thead>
+                <tr style="background-color: #f0f4ff;">
+                  <th style="padding: 12px; text-align: left; color: #333; font-weight: 600;">Product</th>
+                  <th style="padding: 12px; text-align: center; color: #333; font-weight: 600;">Qty</th>
+                  <th style="padding: 12px; text-align: right; color: #333; font-weight: 600;">Price</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsHtml}
+              </tbody>
+            </table>
+
+            <!-- Total -->
+            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span style="color: #666;">Subtotal:</span>
+                <span style="color: #333; font-weight: 600;">KES ${(orderData.total || 0).toLocaleString()}</span>
+              </div>
+              ${orderData.shippingFee ? `
+              <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span style="color: #666;">Shipping Fee:</span>
+                <span style="color: #333; font-weight: 600;">KES ${orderData.shippingFee.toLocaleString()}</span>
+              </div>
+              ` : ''}
+              <div style="display: flex; justify-content: space-between; border-top: 2px solid #ddd; padding-top: 10px;">
+                <span style="color: #333; font-weight: bold; font-size: 16px;">Total Amount:</span>
+                <span style="color: #ff9800; font-weight: bold; font-size: 18px;">KES ${(orderData.total || 0).toLocaleString()}</span>
+              </div>
+            </div>
+
+            <!-- Shipping Info -->
+            ${orderData.shippingInfo ? `
+            <h3 style="color: #333; margin: 20px 0 10px 0;">Shipping Address</h3>
+            <div style="background-color: #f0f4ff; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+              <p style="margin: 5px 0;"><strong>${orderData.shippingInfo.fullName}</strong></p>
+              <p style="margin: 5px 0;">${orderData.shippingInfo.address}</p>
+              <p style="margin: 5px 0;">${orderData.shippingInfo.city}, ${orderData.shippingInfo.county} ${orderData.shippingInfo.postalCode}</p>
+              <p style="margin: 5px 0;">📞 ${orderData.shippingInfo.phone}</p>
+            </div>
+            ` : ''}
+
+            <!-- Next Steps -->
+            <div style="background-color: #e8f5e9; border-left: 4px solid #4CAF50; padding: 15px; margin-bottom: 20px;">
+              <h4 style="margin: 0 0 10px 0; color: #2e7d32;">What happens next?</h4>
+              <ul style="margin: 0; padding-left: 20px; color: #333;">
+                <li style="margin: 8px 0;">Your order will be processed and prepared for shipment</li>
+                <li style="margin: 8px 0;">You will receive tracking information via email</li>
+                <li style="margin: 8px 0;">Expected delivery: 3-5 business days</li>
+              </ul>
+            </div>
+
+            <!-- Track Order Button -->
+            <div style="text-align: center; margin-bottom: 20px;">
+              <a href="${process.env.REACT_APP_BASE_URL || 'https://shopki.com'}/orders/${orderId}" 
+                 style="display: inline-block; background-color: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: 600;">
+                Track Your Order
+              </a>
+            </div>
+
+            <!-- Support Message -->
+            <p style="color: #999; font-size: 14px; text-align: center; margin-bottom: 0;">
+              If you have any questions, please contact us at <a href="mailto:support@shopki.com" style="color: #667eea; text-decoration: none;">support@shopki.com</a>
+            </p>
+          </div>
+
+          <!-- Footer -->
+          <div style="background-color: #f0f4ff; border-top: 1px solid #ddd; padding: 20px; text-align: center; color: #666; font-size: 12px;">
+            <p style="margin: 5px 0;">© ${new Date().getFullYear()} Shopki. All rights reserved.</p>
+            <p style="margin: 5px 0;">This email contains important information about your order.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Send email via Brevo
+    const brevoClient = getBrevClient();
+    const apiKey = process.env.REACT_APP_BREVO_API_KEY;
+    const senderEmail = process.env.REACT_APP_BREVO_SENDER_EMAIL || 'orders@shopki.com';
+
+    if (apiKey) {
+      try {
+        await brevoClient.post('/smtp/email', {
+          to: [{ email: customerEmail }],
+          sender: {
+            name: 'Shopki',
+            email: senderEmail
+          },
+          subject: `Order Confirmed - ${orderId}`,
+          htmlContent
+        });
+        console.log(`✅ Payment confirmation email sent to ${customerEmail}`);
+      } catch (error) {
+        console.error('❌ Brevo email error:', error.response?.data || error.message);
+      }
+    } else {
+      console.log('📧 Email would be sent to:', customerEmail);
+      console.log('📧 Subject: Order Confirmed -', orderId);
+      console.log('📧 Status: ⚠️ LOGGED TO CONSOLE (Brevo not configured)');
+    }
+  } catch (error) {
+    console.error('❌ Error sending payment confirmation email:', error.message);
+  }
+}
+
+/**
+ * Send payment failure email to customer via Brevo
+ */
+async function sendPaymentFailureEmail(customerEmail, orderId, orderData, errorCode) {
+  try {
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: 'Arial', sans-serif; line-height: 1.6; color: #333;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #f9f9f9; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          
+          <!-- Header -->
+          <div style="background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%); color: white; padding: 40px 20px; text-align: center;">
+            <h1 style="margin: 0; font-size: 28px;">Payment Failed ❌</h1>
+            <p style="margin: 10px 0 0 0; font-size: 14px; opacity: 0.9;">Please try again or use a different payment method</p>
+          </div>
+
+          <!-- Main Content -->
+          <div style="padding: 30px;">
+            <h2 style="color: #333; margin: 0 0 20px 0;">We couldn't process your payment</h2>
+            <p style="color: #666; margin: 0 0 20px 0;">Unfortunately, your M-Pesa payment for order <strong>${orderId}</strong> could not be processed.</p>
+
+            <!-- Info Box -->
+            <div style="background-color: #ffebee; border-left: 4px solid #f44336; padding: 15px; margin-bottom: 20px;">
+              <p style="margin: 5px 0; color: #c62828;"><strong>Order ID:</strong> ${orderId}</p>
+              ${errorCode ? `<p style="margin: 5px 0; color: #c62828;"><strong>Error Code:</strong> ${errorCode}</p>` : ''}
+              <p style="margin: 5px 0; color: #c62828;"><strong>Status:</strong> Payment Failed</p>
+              <p style="margin: 5px 0; color: #c62828;">Your order is still saved and you can retry the payment.</p>
+            </div>
+
+            <!-- What to Do -->
+            <h3 style="color: #333; margin: 20px 0 10px 0;">What you can do:</h3>
+            <ul style="color: #666; margin: 0; padding-left: 20px;">
+              <li style="margin: 10px 0;">Try the payment again</li>
+              <li style="margin: 10px 0;">Check your M-Pesa balance</li>
+              <li style="margin: 10px 0;">Use a different payment method</li>
+              <li style="margin: 10px 0;">Contact our support team</li>
+            </ul>
+
+            <!-- Retry Button -->
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${process.env.REACT_APP_BASE_URL || 'https://shopki.com'}/order-success?orderId=${orderId}" 
+                 style="display: inline-block; background-color: #ff9800; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: 600;">
+                Retry Payment
+              </a>
+            </div>
+
+            <!-- Support -->
+            <p style="color: #999; font-size: 14px; text-align: center; margin-bottom: 0;">
+              Need help? Contact us at <a href="mailto:support@shopki.com" style="color: #f44336; text-decoration: none;">support@shopki.com</a>
+            </p>
+          </div>
+
+          <!-- Footer -->
+          <div style="background-color: #f0f4ff; border-top: 1px solid #ddd; padding: 20px; text-align: center; color: #666; font-size: 12px;">
+            <p style="margin: 5px 0;">© ${new Date().getFullYear()} Shopki. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Send email via Brevo
+    const brevoClient = getBrevClient();
+    const apiKey = process.env.REACT_APP_BREVO_API_KEY;
+    const senderEmail = process.env.REACT_APP_BREVO_SENDER_EMAIL || 'orders@shopki.com';
+
+    if (apiKey) {
+      try {
+        await brevoClient.post('/smtp/email', {
+          to: [{ email: customerEmail }],
+          sender: {
+            name: 'Shopki',
+            email: senderEmail
+          },
+          subject: `Payment Failed - Order ${orderId}`,
+          htmlContent
+        });
+        console.log(`✅ Payment failure email sent to ${customerEmail}`);
+      } catch (error) {
+        console.error('❌ Brevo email error:', error.response?.data || error.message);
+      }
+    } else {
+      console.log('📧 Email would be sent to:', customerEmail);
+      console.log('📧 Subject: Payment Failed - Order', orderId);
+      console.log('📧 Status: ⚠️ LOGGED TO CONSOLE (Brevo not configured)');
+    }
+  } catch (error) {
+    console.error('❌ Error sending payment failure email:', error.message);
+  }
+}
+
+/**
+ * POST /api/lipana/webhook
+ * Webhook endpoint to receive payment status updates from Lipana (Lipa Na M-Pesa via Lipana)
+ * - Verifies HMAC signature when `LIPANA_SECRET_KEY` is set
+ * - Supports optional server-side Firestore updates when Firebase Admin is configured
+ */
+app.post('/api/lipana/webhook', async (req, res) => {
+  try {
+    // Get raw body captured by the JSON parser (preferred) or build one
+    const signatureHeader = req.headers['x-lipana-signature'] || req.headers['x-signature'] || req.headers['x-webhook-signature'];
+    let rawBody = req.rawBody;
+    if (!rawBody) {
+      if (typeof req.body === 'string') rawBody = req.body;
+      else rawBody = JSON.stringify(req.body || {});
+    }
+
+    // Determine which secret to use for verifying webhooks. Lipana may sign
+    // using a dedicated webhook secret (LIPANA_WEBHOOK_SECRET).
+    const webhookSecret = process.env.LIPANA_WEBHOOK_SECRET || process.env.LIPANA_SECRET_KEY || null;
+
+    if (webhookSecret && signatureHeader) {
+      const crypto = require('crypto');
+      const computed = crypto.createHmac('sha256', webhookSecret).update(rawBody).digest('hex');
+
+      // Debugging logs for signature mismatch investigations
+      try {
+        console.log('🔍 Webhook debug: incoming signature header:', String(signatureHeader));
+        console.log('🔍 Webhook debug: computed signature:', computed);
+        console.log('🔍 Webhook debug: rawBody length:', rawBody ? rawBody.length : 0);
+        console.log('🔍 Webhook debug: rawBody (truncated 200 chars):', rawBody ? (rawBody.length>200? rawBody.slice(0,200)+'...': rawBody) : '');
+      } catch (dbgErr) {
+        console.warn('Could not log webhook debug info', dbgErr);
+      }
+
+      try {
+        const compBuf = Buffer.from(computed, 'utf8');
+        const sigBuf = Buffer.from(String(signatureHeader), 'utf8');
+        if (compBuf.length !== sigBuf.length || !crypto.timingSafeEqual(compBuf, sigBuf)) {
+          console.warn('❌ Lipana webhook signature mismatch');
+          return res.status(401).json({ success: false, message: 'Invalid signature' });
+        }
+      } catch (e) {
+        // Fallback simple compare if timingSafeEqual throws (shouldn't normally)
+        if (computed !== String(signatureHeader)) {
+          console.warn('❌ Lipana webhook signature mismatch (fallback)');
+          return res.status(401).json({ success: false, message: 'Invalid signature' });
+        }
+      }
+
+      console.log('✅ Lipana webhook signature verified');
+    }
+
+    // Parse payload
+    let payload = {};
+    try {
+      if (Buffer.isBuffer(rawBody)) {
+        payload = JSON.parse(rawBody.toString());
+      } else if (typeof rawBody === 'string') {
+        payload = JSON.parse(rawBody);
+      } else {
+        payload = rawBody; // Already an object
+      }
+    } catch (err) {
+      console.warn('⚠️ Could not parse Lipana webhook body as JSON:', err.message);
+      payload = {};
+    }
+
+    console.log('📥 Lipana webhook received:', JSON.stringify(payload));
+
+    // Generic handler supporting common Lipana shapes.
+    // Examples supported:
+    // { event: 'payment.succeeded', data: { id, checkoutRequestId, amount, status, metadata: { orderId } } }
+    // { type: 'payment', data: { status: 'success', checkoutRequestId, metadata: { orderId } } }
+
+    const event = payload.event || payload.type || null;
+    const data = payload.data || payload || {};
+
+    // Extract identifiers
+    const checkoutRequestId = data.checkoutRequestId || data.checkout_request_id || data.CheckoutRequestID || data.checkoutRequestID;
+    const transactionId = data.id || data.transactionId || data.txnId || data.transaction_id;
+    
+    // Extract status from multiple sources (prioritize event, then data fields)
+    // Lipana uses event field like: "transaction.success", "transaction.failed", "payout.initiated"
+    let statusRaw = '';
+    if (event) {
+      statusRaw = event.toLowerCase();
+    } else {
+      statusRaw = (data.status || data.result || data.state || payload.status || '').toString().toLowerCase();
+    }
+    
+    const metadata = data.metadata || data.meta || {};
+    const orderId = metadata.orderId || metadata.order_id || metadata.order || null;
+
+    // Log extracted values for debugging
+    console.log(`🔍 Extracted webhook data:`);
+    console.log(`   Event: ${event}`);
+    console.log(`   Order ID: ${orderId || '(not in metadata)'}`);
+    console.log(`   Transaction ID: ${transactionId || '(not found)'}`);
+    console.log(`   Checkout Request ID: ${checkoutRequestId || '(not found)'}`);
+    console.log(`   Status (raw): ${statusRaw}`);
+
+    // Normalize status to completed/failed/pending
+    let normalizedStatus = 'unknown';
+    if (/success|completed|paid|ok|transaction\.success/.test(statusRaw)) normalizedStatus = 'completed';
+    else if (/failed|error|declined|cancel|transaction\.failed/.test(statusRaw)) normalizedStatus = 'failed';
+    else if (/pending|processing|waiting|payout\.initiated/.test(statusRaw)) normalizedStatus = 'pending';
+    
+    console.log(`   Status (normalized): ${normalizedStatus}`);
+
+    // Attempt server-side Firestore update if admin initialized
+    if (adminDb) {
+      try {
+        let orderDocRef = null;
+
+        if (orderId) {
+          orderDocRef = adminDb.collection('orders').doc(String(orderId));
+          const orderSnap = await orderDocRef.get();
+          if (orderSnap.exists) {
+            const existing = orderSnap.data();
+            const targetStatus = normalizedStatus === 'completed' ? 'completed' : (normalizedStatus === 'failed' ? 'failed' : 'pending');
+            // Deduplicate: if transaction id and status already match, skip
+            if (existing.transaction && existing.transaction.id && transactionId && String(existing.transaction.id) === String(transactionId) && existing.paymentStatus === targetStatus) {
+              console.log(`ℹ️ Webhook duplicate - order ${orderId} already has transaction ${transactionId} with status ${targetStatus}`);
+            } else {
+              await orderDocRef.update({
+                paymentStatus: targetStatus,
+                lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
+                transaction: {
+                  id: transactionId || null,
+                  checkoutRequestId: checkoutRequestId || null,
+                  raw: data
+                }
+              });
+              console.log(`✅ Updated order ${orderId} to ${normalizedStatus}`);
+            }
+          } else {
+            console.warn(`Order ${orderId} not found for webhook update`);
+          }
+        } else if (checkoutRequestId || transactionId) {
+          // Try to find order by transaction fields (look at top-level fields)
+          const ordersRef = adminDb.collection('orders');
+          let q = null;
+          
+          // Try top-level checkoutRequestID field first (as it's stored from frontend)
+          if (checkoutRequestId) {
+            q = ordersRef.where('checkoutRequestID', '==', checkoutRequestId).limit(1);
+            console.log(`🔍 Searching for order by checkoutRequestID: ${checkoutRequestId}`);
+          } else if (transactionId) {
+            q = ordersRef.where('transactionId', '==', transactionId).limit(1);
+            console.log(`🔍 Searching for order by transactionId: ${transactionId}`);
+          }
+
+          if (q) {
+            const snaps = await q.get();
+            if (!snaps.empty) {
+              const doc = snaps.docs[0];
+              console.log(`✅ Found order ${doc.id} by transaction identifier`);
+              const existing = doc.data();
+              const targetStatus = normalizedStatus === 'completed' ? 'completed' : (normalizedStatus === 'failed' ? 'failed' : 'pending');
+              if (existing.transaction && existing.transaction.id && transactionId && String(existing.transaction.id) === String(transactionId) && existing.paymentStatus === targetStatus) {
+                console.log(`ℹ️ Webhook duplicate - order ${doc.id} already up-to-date`);
+              } else {
+                await doc.ref.update({
+                  paymentStatus: targetStatus,
+                  lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
+                  transaction: {
+                    id: transactionId || null,
+                    checkoutRequestId: checkoutRequestId || null,
+                    raw: data
+                  }
+                });
+                console.log(`✅ Updated order ${doc.id} via transaction lookup to ${normalizedStatus}`);
+              }
+            } else {
+              console.warn(`❌ No matching order found by ${checkoutRequestId ? 'checkoutRequestID' : 'transactionId'}: ${checkoutRequestId || transactionId}`);
+            }
+          } else {
+            console.warn('❌ No transaction identifiers available to search');
+          }
+        } else {
+          console.warn('Webhook payload did not include orderId or transaction identifiers');
+        }
+      } catch (err) {
+        console.error('Error updating Firestore from Lipana webhook:', err);
+      }
+    } else {
+      console.log('Skipping Firestore update: Firebase Admin not initialized');
+    }
+
+    // Return 200 quickly to Lipana
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('Error handling Lipana webhook:', error);
+    res.status(500).json({ success: false });
   }
 });
 
@@ -329,6 +1086,10 @@ app.get('/api/health', (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
+  console.error('Global error:', err);
+  res.status(500).json({ error: 'Internal server error' });
+});
+
 /**
  * ==========================================
  * CHAT NOTIFICATION ROUTES
@@ -357,7 +1118,9 @@ app.post('/api/chat/notify-provider', async (req, res) => {
         success: false,
         error: 'Missing required fields'
       });
-    }    console.log(`   From: ${senderName} (${senderEmail})`);    // Check if SendGrid is configured
+    }
+    console.log(`   From: ${senderName} (${senderEmail})`);
+    // Check if SendGrid is configured
     if (!process.env.SENDGRID_API_KEY || process.env.SENDGRID_API_KEY === 'your_sendgrid_api_key_here') {
       console.log('   Status: ⚠️ LOGGED TO CONSOLE (SendGrid not configured)');
       console.log('   Message Preview:', message.substring(0, 100) + '...');
@@ -417,7 +1180,8 @@ Reply to this message by logging into your Shopki account.
       text: emailText,
       html: emailHtml,
       replyTo: senderEmail
-    });    return res.json({
+    });
+    return res.json({
       success: true,
       message: 'Notification sent to provider',
       status: 'sent'
@@ -451,7 +1215,8 @@ app.post('/api/chat/notify-customer', async (req, res) => {
         success: false,
         error: 'Missing required fields'
       });
-    }    // Check if SendGrid is configured
+    }
+    // Check if SendGrid is configured
     if (!process.env.SENDGRID_API_KEY || process.env.SENDGRID_API_KEY === 'your_sendgrid_api_key_here') {
       console.log('   Status: ⚠️ LOGGED TO CONSOLE (SendGrid not configured)');
       console.log('   Message Preview:', message.substring(0, 100) + '...');
@@ -510,7 +1275,8 @@ View the full conversation by logging into your Shopki account.
       subject: `New Reply from ${providerName} - ${serviceName}`,
       text: emailText,
       html: emailHtml
-    });    return res.json({
+    });
+    return res.json({
       success: true,
       message: 'Notification sent to customer',
       status: 'sent'
@@ -554,7 +1320,8 @@ app.post('/api/booking/notify-vendor', async (req, res) => {
         success: false,
         error: 'Missing required fields'
       });
-    }    if (!process.env.SENDGRID_API_KEY || process.env.SENDGRID_API_KEY === 'your_sendgrid_api_key_here') {
+    }
+    if (!process.env.SENDGRID_API_KEY || process.env.SENDGRID_API_KEY === 'your_sendgrid_api_key_here') {
       console.log('   Status: ⚠️ LOGGED TO CONSOLE (SendGrid not configured)');
       return res.json({
         success: true,
@@ -631,7 +1398,8 @@ Next Steps:
       text: emailText,
       html: emailHtml,
       replyTo: customerEmail
-    });    return res.json({
+    });
+    return res.json({
       success: true,
       message: 'Notification sent to vendor',
       status: 'sent'
@@ -666,7 +1434,8 @@ app.post('/api/booking/notify-customer', async (req, res) => {
         success: false,
         error: 'Missing required fields'
       });
-    }    if (!process.env.SENDGRID_API_KEY || process.env.SENDGRID_API_KEY === 'your_sendgrid_api_key_here') {
+    }
+    if (!process.env.SENDGRID_API_KEY || process.env.SENDGRID_API_KEY === 'your_sendgrid_api_key_here') {
       console.log('   Status: ⚠️ LOGGED TO CONSOLE (SendGrid not configured)');
       return res.json({
         success: true,
@@ -739,7 +1508,8 @@ If you have any questions, you can reply to this email or contact the service pr
       text: emailText,
       html: emailHtml,
       replyTo: customerEmail
-    });    return res.json({
+    });
+    return res.json({
       success: true,
       message: 'Confirmation sent to customer',
       status: 'sent'
@@ -774,7 +1544,8 @@ app.post('/api/booking/notify-customer-acceptance', async (req, res) => {
         success: false,
         error: 'Missing required fields'
       });
-    }    if (!process.env.SENDGRID_API_KEY || process.env.SENDGRID_API_KEY === 'your_sendgrid_api_key_here') {
+    }
+    if (!process.env.SENDGRID_API_KEY || process.env.SENDGRID_API_KEY === 'your_sendgrid_api_key_here') {
       console.log('   Status: ⚠️ LOGGED TO CONSOLE (SendGrid not configured)');
       return res.json({
         success: true,
@@ -837,7 +1608,8 @@ You can now communicate with the service provider via the chat feature.
       subject: `Booking Confirmed - ${serviceName}`,
       text: emailText,
       html: emailHtml
-    });    return res.json({
+    });
+    return res.json({
       success: true,
       message: 'Notification sent to customer',
       status: 'sent'
@@ -873,7 +1645,8 @@ app.post('/api/booking/notify-customer-reschedule', async (req, res) => {
         success: false,
         error: 'Missing required fields'
       });
-    }    if (!process.env.SENDGRID_API_KEY || process.env.SENDGRID_API_KEY === 'your_sendgrid_api_key_here') {
+    }
+    if (!process.env.SENDGRID_API_KEY || process.env.SENDGRID_API_KEY === 'your_sendgrid_api_key_here') {
       console.log('   Status: ⚠️ LOGGED TO CONSOLE (SendGrid not configured)');
       return res.json({
         success: true,
@@ -937,7 +1710,8 @@ If you have questions, contact the service provider through the chat feature.
       subject: `Booking Rescheduled - ${serviceName}`,
       text: emailText,
       html: emailHtml
-    });    return res.json({
+    });
+    return res.json({
       success: true,
       message: 'Notification sent to customer',
       status: 'sent'
@@ -951,6 +1725,141 @@ If you have questions, contact the service provider through the chat feature.
   }
 });
 
+/**
+ * ========== LIPANA PAYMENT INTEGRATION ==========
+ * Proxy endpoint for Lipana M-Pesa STK Push
+ * Frontend calls this endpoint instead of Lipana directly (avoids CORS issues)
+ */
+
+/**
+ * POST /api/lipana/initiate-stk-push
+ * Initiate STK Push via Lipana API
+ */
+app.post('/api/lipana/initiate-stk-push', async (req, res) => {
+  try {
+    const { phone, amount, orderId } = req.body;
+    
+    console.log('✅ LIPANA REQUEST RECEIVED');
+    console.log('📱 Phone:', phone);
+    console.log('💰 Amount:', amount);
+    console.log('📦 Order ID:', orderId);
+
+    if (!phone || !amount) {
+      console.error('❌ Missing required fields');
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: phone, amount'
+      });
+    }
+
+    const lipanaSecretKey = process.env.LIPANA_SECRET_KEY;
+    if (!lipanaSecretKey) {
+      return res.status(500).json({
+        success: false,
+        error: 'Lipana API key not configured. Please check backend/.env'
+      });
+    }
+
+    let formattedPhone = phone;
+    if (phone.startsWith('07')) {
+      formattedPhone = '+254' + phone.substring(1);
+    } else if (phone.startsWith('254')) {
+      formattedPhone = '+' + phone;
+    } else if (!phone.startsWith('+254')) {
+      formattedPhone = '+254' + phone;
+    }
+
+    console.log('📤 Calling Lipana API with phone:', formattedPhone, 'amount:', amount);
+    
+    const lipanaResponse = await fetch(
+      'https://api.lipana.dev/v1/transactions/push-stk',
+      {
+        method: 'POST',
+        headers: {
+          'x-api-key': lipanaSecretKey,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          phone: formattedPhone,
+          amount: parseInt(amount)
+        })
+      }
+    );
+    
+    console.log('📥 Lipana response status:', lipanaResponse.status, lipanaResponse.statusText);
+
+    const lipanaData = await lipanaResponse.json();
+    console.log('📋 Lipana response data:', JSON.stringify(lipanaData, null, 2));
+
+    if (lipanaResponse.ok && lipanaData.success) {
+      console.log('✅ STK Push successful! Transaction ID:', lipanaData.data?.transactionId);
+      
+      // Build comprehensive response with transaction details
+      const transactionResponse = {
+        success: true,
+        transactionId: lipanaData.data?.transactionId,
+        checkoutRequestID: lipanaData.data?.checkoutRequestID,
+        message: lipanaData.data?.message || 'STK push initiated successfully',
+        orderId,
+        // Additional transaction details for frontend tracking
+        transaction: {
+          id: lipanaData.data?.transactionId,
+          checkoutRequestId: lipanaData.data?.checkoutRequestID,
+          orderId: orderId,
+          amount: parseInt(amount),
+          phone: formattedPhone,
+          status: 'pending',
+          timestamp: new Date().toISOString(),
+          expiresIn: 5 * 60 * 1000
+        },
+        instructions: 'Please enter your M-Pesa PIN on your phone to complete the payment.',
+        nextSteps: 'Payment confirmation will be processed automatically.'
+      };
+      
+      console.log('📤 Sending transaction response to frontend');
+      return res.json(transactionResponse);
+    } else {
+      console.error('❌ Lipana API returned error:', lipanaData.message || 'Unknown error');
+      
+      const errorResponse = {
+        success: false,
+        error: lipanaData.message || 'Failed to initiate Lipana STK push',
+        statusCode: lipanaResponse.status,
+        orderId: orderId,
+        recoveryOptions: [
+          'Verify your phone number format (should start with 07 or 254)',
+          'Ensure the amount is between 10-150000 KES',
+          'Check that your phone has active M-Pesa service',
+          'Try again in a few moments'
+        ]
+      };
+      
+      return res.status(lipanaResponse.status).json(errorResponse);
+    }
+  } catch (error) {
+    console.error('Lipana STK Push error:', error);
+    
+    const errorResponse = {
+      success: false,
+      error: error.message || 'Server error while initiating Lipana payment',
+      statusCode: 500,
+      timestamp: new Date().toISOString(),
+      recoveryOptions: [
+        'Check your internet connection',
+        'Try the payment again',
+        'Contact support if the issue persists'
+      ]
+    };
+    
+    return res.status(500).json(errorResponse);
+  }
+});
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {  console.log(`SendGrid Status: ${process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY !== 'your_sendgrid_api_key_here' ? '✅ Configured' : '⚠️ Not configured (emails logged to console)'}`);});
+app.listen(PORT, () => {
+  console.log('\n🚀 ===============================================');
+  console.log(`✅ BACKEND SERVER RUNNING ON PORT ${PORT}`);
+  console.log('🚀 ===============================================\n');
+  console.log(`SendGrid Status: ${process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY !== 'your_sendgrid_api_key_here' ? '✅ Configured' : '⚠️ Not configured (emails logged to console)'}`);
+  console.log(`Lipana Status: ${process.env.LIPANA_SECRET_KEY ? '✅ Configured' : '⚠️ Not configured'}\n`);
+});

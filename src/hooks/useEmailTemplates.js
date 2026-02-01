@@ -15,6 +15,8 @@ const EMAIL_TYPES = [
   'orderCompleted',
   'orderCancelled',
   'orderReturned',
+  'paymentSuccess',
+  'paymentFailure',
   'newsletter'
 ];
 

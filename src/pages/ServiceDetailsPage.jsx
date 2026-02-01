@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaStar, FaClock, FaMapPin, FaPhone, FaEnvelope, FaArrowLeft } from 'react-icons/fa';
+import { FiTrash2 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import { getAuth } from 'firebase/auth';
 import Breadcrumb from '../components/common/Breadcrumb/Breadcrumb';
 import Loader from '../components/common/Loader/Spinner';
 import ServiceChat from '../components/services/ServiceChat/ServiceChat';
 
-import { getService } from '../services/firebase/firestoreHelpers';
+import { getService, ownerDeleteService } from '../services/firebase/firestoreHelpers';
 import { createBooking } from '../services/firebase/bookingHelpers';
 import { sendTransactionalEmail } from '../services/email/brevoService';
 
@@ -20,6 +21,7 @@ const ServiceDetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [bookingForm, setBookingForm] = useState({
     name: '',
     email: '',
@@ -36,6 +38,21 @@ const ServiceDetailsPage = () => {
         const serviceData = await getService(id);
         
         if (serviceData) {
+          // Check visibility: if under_review or rejected, only owner and admin can see
+          if ((serviceData.status === 'under_review' || serviceData.status === 'rejected') && 
+              (!currentUser || (currentUser.uid !== serviceData.sellerId))) {
+            toast.error('This service is not available');
+            navigate('/services');
+            return;
+          }
+          
+          // Check if deleted
+          if (serviceData.status === 'deleted') {
+            toast.error('This service has been deleted');
+            navigate('/services');
+            return;
+          }
+          
           setService(serviceData);
         } else {
           toast.error('Service not found');
@@ -53,7 +70,25 @@ const ServiceDetailsPage = () => {
     if (id) {
       fetchService();
     }
-  }, [id, navigate]);
+  }, [id, navigate, currentUser]);
+
+  const handleDeleteService = async () => {
+    if (!window.confirm('Are you sure you want to delete this service? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      await ownerDeleteService(id, currentUser.uid);
+      toast.success('Service deleted successfully');
+      navigate('/services');
+    } catch (error) {
+      console.error('Error deleting service:', error);
+      toast.error(error.message || 'Failed to delete service');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const handleBookingChange = (e) => {
     const { name, value } = e.target;
@@ -365,6 +400,20 @@ const ServiceDetailsPage = () => {
                   </ul>
                 </div>
               )}
+
+              {/* Service Status Badge */}
+              {(service.status === 'under_review' || service.status === 'rejected') && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                  <p className="text-sm text-yellow-800 font-semibold">
+                    {service.status === 'under_review' 
+                      ? '⚠️ This service is under review by admin'
+                      : '❌ This service has been rejected by admin'}
+                  </p>
+                  {service.adminNotes && (
+                    <p className="text-xs text-yellow-700 mt-2">{service.adminNotes}</p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -384,12 +433,22 @@ const ServiceDetailsPage = () => {
 
               {/* Edit Button - Only show if user is the owner */}
               {currentUser?.uid === service.sellerId && (
-                <button
-                  onClick={() => navigate(`/service/${id}/edit`)}
-                  className="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition mb-3 font-semibold"
-                >
-                  Edit Service
-                </button>
+                <div className="space-y-2 mb-3">
+                  <button
+                    onClick={() => navigate(`/service/${id}/edit`)}
+                    className="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition font-semibold"
+                  >
+                    Edit Service
+                  </button>
+                  <button
+                    onClick={handleDeleteService}
+                    disabled={deleting}
+                    className="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    <FiTrash2 size={16} />
+                    {deleting ? 'Deleting...' : 'Delete Service'}
+                  </button>
+                </div>
               )}
 
               {/* Contact Info */}

@@ -552,5 +552,175 @@ export const DEFAULT_EMAIL_TEMPLATES = {
         </body>
       </html>
     `
+  },
+
+  paymentSuccess: {
+    subject: '✅ Payment Successful - Order #{{orderId}}',
+    htmlContent: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: 'Arial', sans-serif; line-height: 1.6; color: #333;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #f9f9f9; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          
+          <!-- Header -->
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 20px; text-align: center;">
+            <h1 style="margin: 0; font-size: 28px;">Payment Successful! ✅</h1>
+            <p style="margin: 10px 0 0 0; font-size: 14px; opacity: 0.9;">Your order has been confirmed</p>
+          </div>
+
+          <!-- Main Content -->
+          <div style="padding: 30px;">
+            <h2 style="color: #333; margin: 0 0 20px 0;">Thank you for your purchase!</h2>
+            <p style="color: #666; margin: 0 0 20px 0;">Your payment has been processed successfully.</p>
+
+            <!-- Order Details -->
+            <div style="background-color: #f0f4ff; border-left: 4px solid #667eea; padding: 15px; margin-bottom: 20px;">
+              <p style="margin: 5px 0;"><strong>Order ID:</strong> {{orderId}}</p>
+              <p style="margin: 5px 0;"><strong>Payment ID:</strong> {{paymentId}}</p>
+              <p style="margin: 5px 0;"><strong>Order Date:</strong> {{orderDate}}</p>
+              <p style="margin: 5px 0;"><strong>Status:</strong> <span style="color: #4CAF50; font-weight: bold;">PROCESSING</span></p>
+            </div>
+
+            <!-- Items -->
+            <h3 style="color: #333; margin: 20px 0 10px 0;">Order Items</h3>
+            <div style="background-color: #f0f4ff; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+              {{items}}
+            </div>
+
+            <!-- Totals -->
+            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span style="color: #666;">Subtotal:</span>
+                <span style="color: #333; font-weight: 600;">{{subtotal}}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span style="color: #666;">Shipping:</span>
+                <span style="color: #333; font-weight: 600;">{{shippingFee}}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; border-top: 2px solid #ddd; padding-top: 10px;">
+                <span style="color: #333; font-weight: bold; font-size: 16px;">Total:</span>
+                <span style="color: #ff9800; font-weight: bold; font-size: 18px;">{{total}}</span>
+              </div>
+            </div>
+
+            <!-- Shipping Address -->
+            <h3 style="color: #333; margin: 20px 0 10px 0;">Shipping Address</h3>
+            <div style="background-color: #f0f4ff; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+              {{shippingAddress}}
+            </div>
+
+            <!-- Next Steps -->
+            <div style="background-color: #e8f5e9; border-left: 4px solid #4CAF50; padding: 15px; margin-bottom: 20px;">
+              <h4 style="margin: 0 0 10px 0; color: #2e7d32;">What happens next?</h4>
+              <ul style="margin: 0; padding-left: 20px; color: #333;">
+                <li style="margin: 8px 0;">Your order will be processed and prepared for shipment</li>
+                <li style="margin: 8px 0;">You will receive tracking information via email</li>
+                <li style="margin: 8px 0;">Expected delivery: 3-5 business days</li>
+              </ul>
+            </div>
+
+            <!-- Track Order Button -->
+            <div style="text-align: center; margin-bottom: 20px;">
+              <a href="{{trackingUrl}}" style="display: inline-block; background-color: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: 600;">
+                Track Your Order
+              </a>
+            </div>
+
+            <!-- Support Message -->
+            <p style="color: #999; font-size: 14px; text-align: center; margin-bottom: 0;">
+              If you have any questions, please contact us at <a href="mailto:support@shopki.com" style="color: #667eea; text-decoration: none;">support@shopki.com</a>
+            </p>
+          </div>
+
+          <!-- Footer -->
+          <div style="background-color: #f0f4ff; border-top: 1px solid #ddd; padding: 20px; text-align: center; color: #666; font-size: 12px;">
+            <p style="margin: 5px 0;">© {{currentYear}} Shopki. All rights reserved.</p>
+            <p style="margin: 5px 0;">This email contains important information about your order.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
+  },
+
+  paymentFailure: {
+    subject: '❌ Payment Failed - Order #{{orderId}}',
+    htmlContent: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: 'Arial', sans-serif; line-height: 1.6; color: #333;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #f9f9f9; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          
+          <!-- Header -->
+          <div style="background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%); color: white; padding: 40px 20px; text-align: center;">
+            <h1 style="margin: 0; font-size: 28px;">Payment Failed ❌</h1>
+            <p style="margin: 10px 0 0 0; font-size: 14px; opacity: 0.9;">Please try again or use a different payment method</p>
+          </div>
+
+          <!-- Main Content -->
+          <div style="padding: 30px;">
+            <h2 style="color: #333; margin: 0 0 20px 0;">We couldn't process your payment</h2>
+            <p style="color: #666; margin: 0 0 20px 0;">Unfortunately, your M-Pesa payment for order <strong>{{orderId}}</strong> could not be processed.</p>
+
+            <!-- Error Info -->
+            <div style="background-color: #ffebee; border-left: 4px solid #f44336; padding: 15px; margin-bottom: 20px;">
+              <p style="margin: 5px 0; color: #c62828;"><strong>Order ID:</strong> {{orderId}}</p>
+              <p style="margin: 5px 0; color: #c62828;"><strong>Error Code:</strong> {{errorCode}}</p>
+              <p style="margin: 5px 0; color: #c62828;"><strong>Reason:</strong> {{errorMessage}}</p>
+              <p style="margin: 5px 0; color: #c62828;"><strong>Status:</strong> Payment Failed</p>
+              <p style="margin: 10px 0 0 0; color: #c62828;">Your order is still saved and you can retry the payment.</p>
+            </div>
+
+            <!-- Order Summary -->
+            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+              <h4 style="margin: 0 0 10px 0; color: #333;">Order Amount</h4>
+              <div style="display: flex; justify-content: space-between; font-size: 18px;">
+                <span style="font-weight: bold;">Total:</span>
+                <span style="color: #ff9800; font-weight: bold;">{{total}}</span>
+              </div>
+              <p style="margin: 10px 0 0 0; color: #666; font-size: 12px;">Order Date: {{orderDate}}</p>
+            </div>
+
+            <!-- What to Do -->
+            <div style="background-color: #e3f2fd; border-left: 4px solid #2196F3; padding: 15px; margin-bottom: 20px;">
+              <h4 style="margin: 0 0 10px 0; color: #1565c0;">What you can do:</h4>
+              <ul style="margin: 0; padding-left: 20px; color: #333;">
+                <li style="margin: 8px 0;">Try the payment again with the correct PIN</li>
+                <li style="margin: 8px 0;">Use a different M-Pesa account or payment method</li>
+                <li style="margin: 8px 0;">Check that you have sufficient balance</li>
+                <li style="margin: 8px 0;">Contact our support team for assistance</li>
+              </ul>
+            </div>
+
+            <!-- Retry Button -->
+            <div style="text-align: center; margin-bottom: 20px;">
+              <a href="{{retryLink}}" style="display: inline-block; background-color: #f44336; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: 600;">
+                Retry Payment
+              </a>
+            </div>
+
+            <!-- Support Message -->
+            <p style="color: #999; font-size: 14px; text-align: center; margin-bottom: 0;">
+              Need help? Contact us at <a href="mailto:support@shopki.com" style="color: #f44336; text-decoration: none;">support@shopki.com</a> or call our support team.
+            </p>
+          </div>
+
+          <!-- Footer -->
+          <div style="background-color: #ffebee; border-top: 1px solid #ffcdd2; padding: 20px; text-align: center; color: #666; font-size: 12px;">
+            <p style="margin: 5px 0;">© {{currentYear}} Shopki. All rights reserved.</p>
+            <p style="margin: 5px 0;">This is an automated email. Your order is safe and awaiting payment.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
   }
 };

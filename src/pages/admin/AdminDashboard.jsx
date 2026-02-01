@@ -9,6 +9,7 @@ import CategoryDropdown from '../../components/admin/CategoryDropdown';
 import FinanceAnalytics from '../../components/admin/FinanceAnalytics';
 import ProductImageUpload from '../../components/admin/Products/ProductImageUpload';
 import AdminSettings from '../../components/admin/AdminSettings/AdminSettings';
+import AdminServiceManagement from '../../components/admin/Services/AdminServiceManagement';
 import { updateOrderStatus } from '../../services/firebase/firestoreHelpers';
 import { sendOrderStatusUpdate } from '../../services/email/emailAutomation';
 import { sendTransactionalEmail } from '../../services/email/brevoService';
@@ -636,6 +637,16 @@ const AdminDashboard = () => {
               📦 <span className="hidden sm:inline">Products</span>
             </button>
             <button
+              onClick={() => setActiveTab('services')}
+              className={`py-2 sm:py-4 px-2 sm:px-6 font-semibold text-xs sm:text-base flex items-center justify-center gap-1 sm:gap-2 border-b-2 transition whitespace-nowrap flex-1 sm:flex-none ${
+                activeTab === 'services'
+                  ? 'border-orange-500 text-orange-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              🛠️ <span className="hidden sm:inline">Services</span>
+            </button>
+            <button
               onClick={() => setActiveTab('orders')}
               className={`py-2 sm:py-4 px-2 sm:px-6 font-semibold text-xs sm:text-base flex items-center justify-center gap-1 sm:gap-2 border-b-2 transition whitespace-nowrap flex-1 sm:flex-none ${
                 activeTab === 'orders'
@@ -701,6 +712,25 @@ const AdminDashboard = () => {
                 <div className="text-2xl sm:text-3xl font-bold text-red-500">
                   {products.filter(p => p.stock < 10 && p.stock > 0).length}
                 </div>
+              </div>
+            </>
+          ) : activeTab === 'services' ? (
+            <>
+              <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
+                <div className="text-gray-600 text-xs sm:text-sm">Total Services</div>
+                <div className="text-2xl sm:text-3xl font-bold text-orange-500">-</div>
+              </div>
+              <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
+                <div className="text-gray-600 text-xs sm:text-sm">Active</div>
+                <div className="text-2xl sm:text-3xl font-bold text-green-500">-</div>
+              </div>
+              <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
+                <div className="text-gray-600 text-xs sm:text-sm">Under Review</div>
+                <div className="text-2xl sm:text-3xl font-bold text-yellow-500">-</div>
+              </div>
+              <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
+                <div className="text-gray-600 text-xs sm:text-sm">Rejected</div>
+                <div className="text-2xl sm:text-3xl font-bold text-red-500">-</div>
               </div>
             </>
           ) : activeTab === 'orders' ? (
@@ -1168,6 +1198,11 @@ const AdminDashboard = () => {
           )}
         </div>
           </>
+        )}
+
+        {/* Services Section */}
+        {activeTab === 'services' && (
+          <AdminServiceManagement />
         )}
 
         {/* Orders Section */}

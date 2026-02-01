@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FiLock, FiUser, FiPackage, FiBarChart2, FiClock, FiRefreshCw, FiTruck, FiCheckCircle, FiXCircle, FiRotateCcw, FiMail } from 'react-icons/fi';
+import { FiLock, FiUser, FiPackage, FiBarChart2, FiClock, FiRefreshCw, FiTruck, FiCheckCircle, FiXCircle, FiRotateCcw, FiMail, FiCheck, FiAlertCircle } from 'react-icons/fi';
 import useEmailTemplates from '../../../hooks/useEmailTemplates';
 import './EmailTemplateEditor.css';
 
@@ -14,6 +14,8 @@ const TEMPLATE_LABELS = {
   orderCompleted: [<FiCheckCircle key="icon" size={16} />, ' Order Completed'],
   orderCancelled: [<FiXCircle key="icon" size={16} />, ' Order Cancelled'],
   orderReturned: [<FiRotateCcw key="icon" size={16} />, ' Order Returned'],
+  paymentSuccess: [<FiCheck key="icon" size={16} />, ' Payment Success'],
+  paymentFailure: [<FiAlertCircle key="icon" size={16} />, ' Payment Failure'],
   newsletter: [<FiMail key="icon" size={16} />, ' Newsletter'],
   contactFormConfirmation: [<FiMail key="icon" size={16} />, ' Contact Form Response']
 };
@@ -79,6 +81,27 @@ const TEMPLATE_VARIABLES = {
     { label: 'Order Number', variable: '{{orderNumber}}' },
     { label: 'Status Message', variable: '{{statusMessage}}' },
     { label: 'Tracking URL', variable: '{{trackingUrl}}' }
+  ],
+  paymentSuccess: [
+    { label: 'Order ID', variable: '{{orderId}}' },
+    { label: 'Payment ID', variable: '{{paymentId}}' },
+    { label: 'Order Date', variable: '{{orderDate}}' },
+    { label: 'Items', variable: '{{items}}' },
+    { label: 'Subtotal', variable: '{{subtotal}}' },
+    { label: 'Shipping Fee', variable: '{{shippingFee}}' },
+    { label: 'Total Amount', variable: '{{total}}' },
+    { label: 'Shipping Address', variable: '{{shippingAddress}}' },
+    { label: 'Tracking URL', variable: '{{trackingUrl}}' },
+    { label: 'Current Year', variable: '{{currentYear}}' }
+  ],
+  paymentFailure: [
+    { label: 'Order ID', variable: '{{orderId}}' },
+    { label: 'Error Code', variable: '{{errorCode}}' },
+    { label: 'Error Message', variable: '{{errorMessage}}' },
+    { label: 'Retry Link', variable: '{{retryLink}}' },
+    { label: 'Order Date', variable: '{{orderDate}}' },
+    { label: 'Total Amount', variable: '{{total}}' },
+    { label: 'Current Year', variable: '{{currentYear}}' }
   ],
   newsletter: [
     { label: 'Display Name', variable: '{{displayName}}' },

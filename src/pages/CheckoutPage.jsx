@@ -1,11 +1,11 @@
 // Location: src/pages/CheckoutPage.jsx
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { FiCreditCard, FiPhone } from 'react-icons/fi';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { createOrder, updateOrderStatus } from '../services/firebase/firestoreHelpers';
+import { createOrder, updateOrderStatus, getOrderById } from '../services/firebase/firestoreHelpers';
 import { sendOrderConfirmation } from '../services/email/emailAutomation';
 import { initiateMpesaPayment, formatPhoneNumber, validateMpesaPaymentData } from '../services/payment/mpesaService';
 import { toast } from 'react-toastify';
@@ -13,13 +13,27 @@ import Breadcrumb from '../components/common/Breadcrumb/Breadcrumb';
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
-  const { cartItems, cartTotal, clearCart } = useCart();
+  const { cartItems, cartTotal, clearCart, restoreCart } = useCart();
+
+  // Redirect if user is not authenticated
+  React.useEffect(() => {
+    if (user === null) {
+      toast.error('Please log in to checkout');
+      navigate('/login');
+    }
+  }, [user, navigate]);
+  
+  // Handle retry payment scenario
+  const retryOrderId = location.state?.orderId;
+  const isRetryPayment = location.state?.retryPayment || false;
   
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [mpesaLoading, setMpesaLoading] = useState(false);
   const [mpesaCheckoutId, setMpesaCheckoutId] = useState(null);
+  const [existingOrderId, setExistingOrderId] = useState(retryOrderId || null);
   
   const [shippingInfo, setShippingInfo] = useState({
     fullName: '',
@@ -33,8 +47,77 @@ const CheckoutPage = () => {
   
   const [paymentMethod, setPaymentMethod] = useState('mpesa');
 
-  const shippingFee = cartTotal > 5000 ? 0 : 300;
+  // When retrying, load the existing order details
+  React.useEffect(() => {
+    if (isRetryPayment && retryOrderId) {
+      const loadRetryOrder = async () => {
+        try {
+          const { order } = await getOrderById(retryOrderId);
+          if (order) {
+            // Restore shipping info and payment details from the failed order
+            setShippingInfo(order.shippingInfo || {
+              fullName: '',
+              email: user?.email || '',
+              phone: '',
+              address: '',
+              city: '',
+              county: '',
+              postalCode: ''
+            });
+            setPaymentMethod(order.paymentMethod || 'mpesa');
+            setExistingOrderId(retryOrderId);
+              // Restore cart items from order into cart context
+              if (order.items && Array.isArray(order.items) && order.items.length > 0) {
+                restoreCart(order.items);
+                console.log('🔄 Cart restored from failed order items:', order.items.length, 'items');
+              } else {
+                console.warn('⚠️ No items found in order for restore:', order);
+              }
+            
+            console.log('🔄 Loaded order details for retry:', retryOrderId, 'with', order.items?.length || 0, 'items');
+            toast.info('Order loaded. You can now retry the payment.');
+          }
+          else {
+            // Try restoring from localStorage fallback
+            try {
+              const sessionKey = `order_session_${retryOrderId}`;
+              const raw = localStorage.getItem(sessionKey);
+              if (raw) {
+                const sess = JSON.parse(raw);
+                if (sess.shippingInfo) setShippingInfo(sess.shippingInfo);
+                if (sess.paymentMethod) setPaymentMethod(sess.paymentMethod);
+                if (sess.cartItems) {
+                  restoreCart(sess.cartItems);
+                  console.log('🔄 Cart restored from localStorage:', sess.cartItems.length, 'items');
+                }
+                console.log('🔄 Restored order session from localStorage:', sessionKey);
+                toast.info('Restored previous order session. You can retry payment.');
+              }
+            } catch (e) {
+              console.warn('No local session found for retry:', e.message);
+            }
+          }
+        } catch (error) {
+          console.error('Error loading order for retry:', error);
+          toast.error('Failed to load order details');
+        }
+      };
+      
+      loadRetryOrder();
+    }
+  }, [isRetryPayment, retryOrderId, user]);
+
+  // All deliveries are free
+  const shippingFee = 0;
+  // Total is computed dynamically to ensure it updates when cartTotal changes (e.g., after restoreCart)
   const total = cartTotal + shippingFee;
+
+  // Debug: Log cart state when it changes
+  React.useEffect(() => {
+    if (isRetryPayment) {
+      console.log('🛒 [RETRY] Current cart items:', cartItems.length, 'items', 'Total:', total);
+    }
+  }, [cartItems, total, isRetryPayment]);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-KE', {
@@ -83,11 +166,12 @@ const CheckoutPage = () => {
       if (!validation.valid) {
         toast.error(validation.error);
         setMpesaLoading(false);
-        return false;
+        return { success: false, error: validation.error };
       }
 
       // Format phone number to M-Pesa format
-      const formattedPhone = formatPhoneNumber(phoneNumber);      toast.info('📱 Sending M-Pesa prompt to your phone...', { autoClose: false });
+      const formattedPhone = formatPhoneNumber(phoneNumber);
+      toast.info('📱 Sending M-Pesa prompt to your phone...', { autoClose: false });
 
       // Call backend to initiate M-Pesa STK Push
       const result = await initiateMpesaPayment({
@@ -95,24 +179,60 @@ const CheckoutPage = () => {
         phoneNumber: formattedPhone
       });
 
-      if (result.success) {        setMpesaCheckoutId(result.checkoutRequestId);
+      if (result.success) {
+        // Store transaction details
+        const transactionData = {
+          transactionId: result.transactionId,
+          checkoutRequestID: result.checkoutRequestID,
+          orderId: orderId,
+          amount: total,
+          phone: formattedPhone,
+          status: 'pending',
+          timestamp: new Date().toISOString(),
+          message: result.message
+        };
+
+        // Update order with transaction details
+        try {
+          await updateOrderStatus(orderId, {
+            paymentStatus: 'initiated',
+            transactionId: result.transactionId,
+            checkoutRequestID: result.checkoutRequestID,
+            transactionData: transactionData,
+            lastUpdated: new Date().toISOString()
+          });
+        } catch (updateError) {
+          console.warn('Failed to update order with transaction data:', updateError);
+        }
+
+        setMpesaCheckoutId(result.checkoutRequestID);
         
         toast.success('✅ M-Pesa prompt sent! Please enter your PIN on your phone.', {
           autoClose: 5000
         });
 
-        // Save checkout ID to order for verification
-        // In production, you would poll the backend or wait for callback
-        return true;
+        return { success: true, data: transactionData };
       } else {
         console.error('❌ STK Push failed:', result.error);
         toast.error(`Payment failed: ${result.error || 'Unable to process M-Pesa payment'}`);
-        return false;
+        
+        // Update order status as payment failed
+        try {
+          await updateOrderStatus(orderId, {
+            paymentStatus: 'failed',
+            paymentError: result.error,
+            lastUpdated: new Date().toISOString()
+          });
+        } catch (updateError) {
+          console.warn('Failed to update order status:', updateError);
+        }
+
+        return { success: false, error: result.error };
       }
     } catch (error) {
       console.error('M-Pesa payment error:', error);
       toast.error('Payment error. Please try again.');
-      return false;
+      return { success: false, error: error.message };
     } finally {
       setMpesaLoading(false);
     }
@@ -124,47 +244,113 @@ const CheckoutPage = () => {
     setLoading(true);
     
     try {
-      const orderData = {
-        userId: user.uid,
-        userEmail: user.email,
-        userName: user.displayName || 'Customer',
-        userPhone: shippingInfo.phone,
-        invoiceNumber: `INV-${Date.now()}-${user.uid.slice(0, 8).toUpperCase()}`,
-        items: cartItems,
-        shippingInfo,
-        paymentMethod,
-        subtotal: cartTotal,
-        shippingFee,
-        total,
-        totalAmount: total,
-        status: paymentMethod === 'cod' ? 'pending' : 'payment_pending',
-        paymentStatus: 'pending',
-        orderDate: new Date().toISOString()
-      };
-
-      const { orderId, error } = await createOrder(orderData);
+      let orderId;
+      let isRetry = false;
       
-      if (error) {
-        toast.error('Failed to create order');
-        setLoading(false);
-        return;
+      // If retrying a failed payment, use the existing order
+      if (existingOrderId && isRetryPayment) {
+        orderId = existingOrderId;
+        isRetry = true;
+        console.log('🔄 Retrying payment for order:', orderId);
+        
+        // Update order with latest shipping info for retry
+        await updateOrderStatus(orderId, {
+          shippingInfo,
+          paymentMethod,
+          status: 'payment_pending',
+          paymentStatus: 'pending',
+          lastUpdated: new Date().toISOString()
+        });
+        
+        toast.info('📱 Retrying payment for order ' + orderId);
+      } else {
+        // Create new order
+        const orderData = {
+          userId: user.uid,
+          userEmail: user.email,
+          userName: user.displayName || 'Customer',
+          userPhone: shippingInfo.phone,
+          invoiceNumber: `INV-${Date.now()}-${user.uid.slice(0, 8).toUpperCase()}`,
+          items: cartItems,
+          shippingInfo,
+          paymentMethod,
+          subtotal: cartTotal,
+          total,
+          totalAmount: total,
+          status: paymentMethod === 'cod' ? 'pending' : 'payment_pending',
+          paymentStatus: 'pending',
+          orderDate: new Date().toISOString()
+        };
+
+        const { orderId: newOrderId, error } = await createOrder(orderData);
+        
+        if (error) {
+          toast.error('Failed to create order');
+          setLoading(false);
+          return;
+        }
+        
+        orderId = newOrderId;
+        // Persist session info for retry fallback (cart, shipping, payment)
+        try {
+          const sessionKey = `order_session_${orderId}`;
+          const session = {
+            cartItems,
+            shippingInfo,
+            paymentMethod,
+            total
+          };
+          localStorage.setItem(sessionKey, JSON.stringify(session));
+          console.log('💾 Saved order session for retry:', sessionKey);
+        } catch (err) {
+          console.warn('Could not save order session:', err.message);
+        }
       }
 
       // Handle M-Pesa payment
       if (paymentMethod === 'mpesa') {
-        const mpesaSuccess = await handleMpesaPayment(orderId);
+        const paymentResponse = await handleMpesaPayment(orderId);
         
-        if (!mpesaSuccess) {
+        if (!paymentResponse.success) {
+          // Update order status to failed
+          await updateOrderStatus(orderId, {
+            status: 'payment_failed',
+            paymentStatus: 'failed',
+            paymentError: paymentResponse.error,
+            lastUpdated: new Date().toISOString()
+          });
+          
+          toast.warning('⚠️ Payment initiation failed. Please try again or use another payment method.', {
+            autoClose: 5000
+          });
           setLoading(false);
           return;
         }
 
-        // For M-Pesa, show a waiting screen for the user to complete payment
-        toast.info('⏳ Waiting for M-Pesa confirmation...', { autoClose: false });
+        // Payment initiated successfully - update order status
+        await updateOrderStatus(orderId, {
+          status: 'payment_processing',
+          paymentStatus: 'initiated',
+          lastUpdated: new Date().toISOString()
+        });
+
+        // Only clear cart on NEW orders, not on retries
+        if (!isRetry) {
+          clearCart();
+        }
         
-        // In production, implement polling or callback webhook to confirm payment
-        // For now, redirect to a payment verification page
-        navigate(`/order-success?orderId=${orderId}&paymentPending=true`);
+        // Redirect to payment confirmation page
+        toast.success('✅ Order placed! Waiting for M-Pesa confirmation...', {
+          autoClose: 5000
+        });
+        
+        navigate(`/order-success`, {
+          state: {
+            orderId,
+            transactionData: paymentResponse.data,
+            paymentMethod: 'mpesa'
+          }
+        });
         setLoading(false);
         return;
       }
@@ -285,14 +471,14 @@ const CheckoutPage = () => {
 
                   <div>
                     <label className="block text-sm font-medium mb-2">Address *</label>
-                    <input
-                      type="text"
-                      name="address"
-                      value={shippingInfo.address}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
-                      placeholder="Street address, building, apartment"
-                    />
+                      <input
+                        type="text"
+                        name="address"
+                        value={shippingInfo.address}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                        placeholder="Street address, building, apartment"
+                      />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

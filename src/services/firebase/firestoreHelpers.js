@@ -12,10 +12,24 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
-  serverTimestamp 
+  serverTimestamp,
+  setDoc 
 } from 'firebase/firestore';
 import { db } from './config';
 import { sendOrderStatusUpdate } from '../email/emailAutomation';
+
+/**
+ * Generate a 10-character alphanumeric ID (uppercase letters + numbers)
+ * Example: A1B2C3D4E5, X9Y8Z7W6V5
+ */
+const generateOrderId = () => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let orderId = '';
+  for (let i = 0; i < 10; i++) {
+    orderId += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return orderId;
+};
 
 /**
  * Get all products or limited number
@@ -67,7 +81,8 @@ export const getProducts = async (limitCount = null, filters = {}) => {
         id: doc.id,
         ...doc.data()
       });
-    });    return { products, error: null };
+    });
+    return { products, error: null };
     
   } catch (error) {
     console.error('❌ Error fetching products:', error);
@@ -120,7 +135,8 @@ export const getCategories = async () => {
         id: doc.id,
         ...doc.data()
       });
-    });    return { categories, error: null };
+    });
+    return { categories, error: null };
     
   } catch (error) {
     console.error('❌ Error fetching categories:', error);
@@ -162,7 +178,8 @@ export const addProduct = async (productData) => {
       ...productData,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
-    });    return { productId: docRef.id, error: null };
+    });
+    return { productId: docRef.id, error: null };
     
   } catch (error) {
     console.error('❌ Error adding product:', error);
@@ -179,7 +196,8 @@ export const updateProduct = async (productId, updates) => {
     await updateDoc(docRef, {
       ...updates,
       updatedAt: serverTimestamp()
-    });    return { success: true, error: null };
+    });
+    return { success: true, error: null };
     
   } catch (error) {
     console.error('❌ Error updating product:', error);
@@ -192,7 +210,8 @@ export const updateProduct = async (productId, updates) => {
  */
 export const deleteProduct = async (productId) => {
   try {
-    await deleteDoc(doc(db, 'products', productId));    return { success: true, error: null };
+    await deleteDoc(doc(db, 'products', productId));
+    return { success: true, error: null };
     
   } catch (error) {
     console.error('❌ Error deleting product:', error);
@@ -216,7 +235,8 @@ export const searchProducts = async (searchTerm) => {
       product.name?.toLowerCase().includes(searchLower) ||
       product.description?.toLowerCase().includes(searchLower) ||
       product.keywords?.some(keyword => keyword.toLowerCase().includes(searchLower))
-    );    return { products: filtered, error: null };
+    );
+    return { products: filtered, error: null };
     
   } catch (error) {
     console.error('❌ Error searching products:', error);
@@ -257,7 +277,8 @@ export const getProductReviews = async (productId) => {
         id: doc.id,
         ...doc.data()
       });
-    });    return { reviews, error: null };
+    });
+    return { reviews, error: null };
     
   } catch (error) {
     console.error('❌ Error fetching reviews:', error);
@@ -274,7 +295,8 @@ export const addReview = async (productId, reviewData) => {
       productId,
       ...reviewData,
       createdAt: serverTimestamp()
-    });    return { reviewId: docRef.id, error: null };
+    });
+    return { reviewId: docRef.id, error: null };
     
   } catch (error) {
     console.error('❌ Error adding review:', error);
@@ -288,7 +310,8 @@ export const addReview = async (productId, reviewData) => {
  */
 export const createOrder = async (orderData) => {
   try {
-    // Step 1: Validate stock for ALL items before creating order    const vendorIds = new Set(); // Support multiple vendors
+    // Step 1: Validate stock for ALL items before creating order
+    const vendorIds = new Set(); // Support multiple vendors
     const stockValidation = {};
     
     if (orderData.items && Array.isArray(orderData.items)) {
@@ -325,7 +348,8 @@ export const createOrder = async (orderData) => {
               // Collect vendor IDs
               if (productData.vendorId) {
                 vendorIds.add(productData.vendorId);
-              }            } else {
+              }
+            } else {
               return { orderId: null, error: `Product ${productId} not found` };
             }
           } catch (err) {
@@ -339,8 +363,12 @@ export const createOrder = async (orderData) => {
     // Step 2: Create main order document with all vendor IDs
     const vendorIdArray = Array.from(vendorIds);
     
+    // Generate custom 10-character order ID
+    const orderId = generateOrderId();
+    
     const orderDoc = {
       ...orderData,
+      orderId: orderId, // Store the ID in the document as well
       status: 'pending',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -348,27 +376,13 @@ export const createOrder = async (orderData) => {
       vendorId: vendorIdArray.length === 1 ? vendorIdArray[0] : null // Keep single vendorId for backward compatibility
     };
     
-    const docRef = await addDoc(collection(db, 'orders'), orderDoc);
-    const orderId = docRef.id;    // Step 3: Update stock for all items (now safe since we validated)    for (const item of orderData.items) {
-      const productId = item.productId || item.id;
-      const quantity = item.quantity || 1;
-      
-      if (productId && stockValidation[productId]) {
-        try {
-          const validation = stockValidation[productId];
-          const newStock = Math.max(0, validation.currentStock - quantity);
-          const productRef = doc(db, 'products', productId);
-          
-          await updateDoc(productRef, {
-            stock: newStock,
-            sold: (validation.productData.sold || 0) + quantity,
-            updatedAt: serverTimestamp()
-          });          console.log(`📊 Updated sold count for product ${productId}: ${(validation.productData.sold || 0)} → ${(validation.productData.sold || 0) + quantity}`);
-        } catch (err) {
-          console.warn(`⚠️ Could not update stock for product ${productId}:`, err.message);
-        }
-      }
-    }
+    // Use setDoc with custom ID instead of addDoc with auto-generated ID
+    await setDoc(doc(db, 'orders', orderId), orderDoc);
+    console.log(`📋 Created order with custom ID: ${orderId}`);
+    
+    // Step 3: DO NOT reduce stock here - wait for payment success
+    // Stock will be reduced only after payment is successfully processed
+    console.log(`⏳ Stock will be reduced after payment is confirmed for order: ${orderId}`);
     
     return { orderId, error: null };
     
@@ -439,16 +453,57 @@ export const getOrderById = async (orderId) => {
 };
 
 /**
+ * Recursively remove undefined values from an object (Firestore requirement)
+ */
+const cleanUndefinedValues = (obj) => {
+  if (!obj || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(cleanUndefinedValues);
+  
+  return Object.entries(obj).reduce((acc, [key, value]) => {
+    if (value !== undefined) {
+      acc[key] = cleanUndefinedValues(value);
+    }
+    return acc;
+  }, {});
+};
+
+/**
  * Update order status
  * @param {string} orderId - Order ID
- * @param {string} status - New status
+ * @param {string|object} statusOrData - New status string OR object with {status, paymentStatus, transactionData, etc}
  * @param {string} vendorId - Optional vendor ID for permission check
  */
-export const updateOrderStatus = async (orderId, status, vendorId = null) => {
+export const updateOrderStatus = async (orderId, statusOrData, vendorId = null) => {
   try {
-    console.log(`📝 Updating order ${orderId} status to: ${status}${vendorId ? ` (vendor: ${vendorId})` : ' (admin/user)'}`);
-    
     const docRef = doc(db, 'orders', orderId);
+    
+    // Normalize input: handle both string and object formats
+    let updatePayload = {};
+    let statusString = '';
+    
+    if (typeof statusOrData === 'string') {
+      // Legacy: status is a simple string
+      statusString = statusOrData;
+      updatePayload = { status: statusString };
+    } else if (typeof statusOrData === 'object' && statusOrData !== null) {
+      // New: object with paymentStatus, transactionData, etc.
+      const { paymentStatus, status, transactionId, checkoutRequestID, transactionData, paymentError, lastUpdated } = statusOrData;
+      
+      statusString = status || paymentStatus || 'payment_processing';
+      updatePayload.status = statusString;
+      
+      // Only add non-undefined fields
+      if (paymentStatus) updatePayload.paymentStatus = paymentStatus;
+      if (transactionId) updatePayload.transactionId = transactionId;
+      if (checkoutRequestID) updatePayload.checkoutRequestID = checkoutRequestID;
+      // Clean transactionData to remove undefined fields
+      if (transactionData) updatePayload.transactionData = cleanUndefinedValues(transactionData);
+      if (paymentError) updatePayload.paymentError = paymentError;
+    } else {
+      return { success: false, error: 'Invalid status parameter' };
+    }
+
+    console.log(`📝 Updating order ${orderId} status to: ${statusString}${vendorId ? ` (vendor: ${vendorId})` : ' (admin/user)'}`);
     
     // Fetch the order to get user and order details
     const orderSnap = await getDoc(docRef);
@@ -457,7 +512,8 @@ export const updateOrderStatus = async (orderId, status, vendorId = null) => {
       return { success: false, error: 'Order not found' };
     }
     
-    let orderData = orderSnap.data();    // If vendorId is provided, verify vendor ownership
+    let orderData = orderSnap.data();
+    // If vendorId is provided, verify vendor ownership
     if (vendorId && orderData.vendorId && orderData.vendorId !== vendorId) {
       console.error('❌ Unauthorized: Vendor does not own this order');
       return { success: false, error: 'Unauthorized: This is not your order' };
@@ -478,19 +534,27 @@ export const updateOrderStatus = async (orderId, status, vendorId = null) => {
       }
     }
     
-    // Update the order status in Firestore
-    await updateDoc(docRef, {
-      status,
-      updatedAt: serverTimestamp()
-    });    // Send email notification to user
-    if (orderData.userEmail) {      const orderInfo = {
+    // Add timestamp
+    updatePayload.updatedAt = serverTimestamp();
+    
+    // Clean the entire payload to remove undefined values
+    const cleanPayload = cleanUndefinedValues(updatePayload);
+    
+    // Update the order in Firestore
+    await updateDoc(docRef, cleanPayload);
+    
+    // Send email notification to user (only for non-payment status updates)
+    if (orderData.userEmail && !statusString.includes('payment')) {
+      const orderInfo = {
         id: orderId,
-        status: status,
+        status: statusString,
         trackingNumber: orderData.trackingNumber || null
       };
-      const emailResult = await sendOrderStatusUpdate(orderData.userEmail, orderInfo);    } else {
+      await sendOrderStatusUpdate(orderData.userEmail, orderInfo);
+    } else if (!orderData.userEmail) {
       console.warn('⚠️ No email found for order:', orderId);
-    }    return { success: true, error: null };
+    }
+    return { success: true, error: null };
     
   } catch (error) {
     console.error('❌ Error updating order status:', error);
@@ -505,6 +569,9 @@ export const getServices = async (limitCount = null, filters = {}) => {
   try {
     let q = collection(db, 'services');
     const constraints = [];
+    
+    // Filter out deleted services by default
+    constraints.push(where('status', '!=', 'deleted'));
     
     if (filters.category) {
       constraints.push(where('category', '==', filters.category));
@@ -579,6 +646,7 @@ export const createService = async (serviceData, userId) => {
     const newService = {
       ...serviceData,
       sellerId: userId,
+      status: 'active', // New field: active, under_review, rejected, deleted
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       rating: 0,
@@ -677,5 +745,211 @@ export const getServicesBySeller = async (sellerId) => {
   } catch (error) {
     console.error('Error fetching seller services:', error);
     return [];
+  }
+};
+
+/**
+ * Get all services for admin (including hidden/under review)
+ */
+export const getAllServicesAdmin = async () => {
+  try {
+    const q = query(
+      collection(db, 'services'),
+      orderBy('createdAt', 'desc')
+    );
+    
+    const snapshot = await getDocs(q);
+    const services = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    
+    return services;
+  } catch (error) {
+    console.error('Error fetching services for admin:', error);
+    return [];
+  }
+};
+
+/**
+ * Update service status (admin only)
+ * status: 'active', 'under_review', 'rejected', 'deleted'
+ */
+export const updateServiceStatus = async (serviceId, status, adminNotes = '') => {
+  try {
+    const docRef = doc(db, 'services', serviceId);
+    const updateData = {
+      status,
+      updatedAt: serverTimestamp()
+    };
+    
+    if (adminNotes) {
+      updateData.adminNotes = adminNotes;
+    }
+    
+    if (status === 'under_review') {
+      updateData.reviewRequestedAt = serverTimestamp();
+    }
+    
+    await updateDoc(docRef, updateData);
+    
+    return {
+      success: true,
+      message: `Service status updated to ${status}`
+    };
+  } catch (error) {
+    console.error('Error updating service status:', error);
+    throw error;
+  }
+};
+
+/**
+ * Admin edit service (correct spelling, etc.)
+ */
+export const adminEditService = async (serviceId, editData) => {
+  try {
+    const docRef = doc(db, 'services', serviceId);
+    
+    const updateData = {
+      ...editData,
+      updatedAt: serverTimestamp(),
+      lastEditedByAdmin: true
+    };
+    
+    await updateDoc(docRef, updateData);
+    
+    return {
+      success: true,
+      message: 'Service updated by admin'
+    };
+  } catch (error) {
+    console.error('Error editing service as admin:', error);
+    throw error;
+  }
+};
+
+/**
+ * Admin delete service (permanent)
+ */
+export const adminDeleteService = async (serviceId) => {
+  try {
+    const docRef = doc(db, 'services', serviceId);
+    await updateDoc(docRef, {
+      status: 'deleted',
+      deletedAt: serverTimestamp(),
+      deletedByAdmin: true,
+      updatedAt: serverTimestamp()
+    });
+    
+    return {
+      success: true,
+      message: 'Service deleted by admin'
+    };
+  } catch (error) {
+    console.error('Error deleting service:', error);
+    throw error;
+  }
+};
+
+/**
+ * Owner delete service
+ */
+export const ownerDeleteService = async (serviceId, sellerId) => {
+  try {
+    const docRef = doc(db, 'services', serviceId);
+    const serviceSnap = await getDoc(docRef);
+    
+    if (!serviceSnap.exists()) {
+      throw new Error('Service not found');
+    }
+    
+    const serviceData = serviceSnap.data();
+    
+    if (serviceData.sellerId !== sellerId) {
+      throw new Error('Unauthorized: You do not own this service');
+    }
+    
+    await updateDoc(docRef, {
+      status: 'deleted',
+      deletedAt: serverTimestamp(),
+      deletedByOwner: true,
+      updatedAt: serverTimestamp()
+    });
+    
+    return {
+      success: true,
+      message: 'Service deleted successfully'
+    };
+  } catch (error) {
+    console.error('Error deleting service by owner:', error);
+    throw error;
+  }
+};
+
+/**
+ * Reduce stock for an order after successful payment
+ * This is called from the backend after M-Pesa payment is successful
+ */
+export const reduceStockAfterPayment = async (orderId) => {
+  try {
+    const orderRef = doc(db, 'orders', orderId);
+    const orderSnap = await getDoc(orderRef);
+
+    if (!orderSnap.exists()) {
+      console.error(`❌ Order ${orderId} not found`);
+      return { success: false, error: 'Order not found' };
+    }
+
+    const orderData = orderSnap.data();
+    
+    // Check if stock already reduced (prevent double reduction)
+    if (orderData.stockReduced) {
+      console.log(`⏭️  Stock already reduced for order ${orderId}`);
+      return { success: true, message: 'Stock already reduced' };
+    }
+
+    // Reduce stock for each item
+    if (orderData.items && Array.isArray(orderData.items)) {
+      for (const item of orderData.items) {
+        const productId = item.productId || item.id;
+        const quantity = item.quantity || 1;
+
+        if (productId) {
+          try {
+            const productRef = doc(db, 'products', productId);
+            const productSnap = await getDoc(productRef);
+
+            if (productSnap.exists()) {
+              const productData = productSnap.data();
+              const currentStock = productData.stock || 0;
+              const newStock = Math.max(0, currentStock - quantity);
+
+              await updateDoc(productRef, {
+                stock: newStock,
+                sold: (productData.sold || 0) + quantity,
+                updatedAt: serverTimestamp()
+              });
+
+              console.log(`📊 Stock reduced for ${item.name}: ${currentStock} → ${newStock}`);
+            }
+          } catch (err) {
+            console.error(`❌ Error reducing stock for product ${productId}:`, err.message);
+          }
+        }
+      }
+    }
+
+    // Mark order as having stock reduced
+    await updateDoc(orderRef, {
+      stockReduced: true,
+      updatedAt: serverTimestamp()
+    });
+
+    console.log(`✅ Stock reduced successfully for order ${orderId}`);
+    return { success: true, message: 'Stock reduced after payment' };
+
+  } catch (error) {
+    console.error('❌ Error reducing stock after payment:', error);
+    return { success: false, error: error.message };
   }
 };

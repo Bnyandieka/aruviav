@@ -4,7 +4,6 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import initInspectorLock from './utils/inspectorLock';
 
 // Context Providers
 import { AuthProvider } from './context/AuthContext';
@@ -58,11 +57,6 @@ import NotificationContainer from './components/common/NotificationContainer';
 import './App.css';
 
 function App() {
-  useEffect(() => {
-    // Initialize inspector lock on app load
-    initInspectorLock();
-  }, []);
-
   return (
     <Router>
       <AuthProvider>

@@ -1,51 +1,31 @@
-// M-Pesa Payment Service
+// M-Pesa Payment Service with Lipana Integration
 // Location: src/services/payment/mpesaService.js
+// Calls backend proxy endpoint (avoids CORS issues with Lipana)
 
 import axios from 'axios';
 
-// Backend API base URL (adjust if needed)
-// Note: Only needed if you have a backend M-Pesa service running
+// Backend API base URL
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
-// Disable console errors for M-Pesa service if backend is not available
-const axiosInstance = axios.create({
-  baseURL: API_BASE_URL,
-  validateStatus: () => true // Don't throw on any status code
-});
-
-axiosInstance.interceptors.response.use(
-  response => response,
-  error => {
-    // Silently handle connection errors when backend is not available
-    if (!error.response && error.code === 'ECONNREFUSED') {
-      console.debug('M-Pesa backend service unavailable');
-    }
-    return Promise.reject(error);
-  }
-);
-
 /**
- * Initiate M-Pesa STK Push (Lipa Na M-Pesa Online)
- * This prompts the user with an M-Pesa popup on their phone
+ * Initiate M-Pesa STK Push via Lipana (through backend proxy)
  * 
  * @param {Object} paymentData - Payment information
- * @param {string} paymentData.phoneNumber - Customer phone number (format: 254712345678)
- * @param {number} paymentData.amount - Amount in KES
- * @param {string} paymentData.orderId - Aruviah order ID
- * @param {string} paymentData.accountReference - Account reference (e.g., "ARUVIAH-ORDER-123")
+ * @param {string} paymentData.phoneNumber - Customer phone number (format: 254712345678 or +254712345678)
+ * @param {number} paymentData.amount - Amount in KES (minimum 10)
+ * @param {string} paymentData.orderId - Order ID reference
  * @param {string} paymentData.description - Transaction description
- * @returns {Promise<Object>} Response with checkout request ID and status
+ * @returns {Promise<Object>} Response with transaction ID and status
  */
 export const initiateMpesaPayment = async (paymentData) => {
   try {
-    const response = await axiosInstance.post(
-      `/api/mpesa/initiate-payment`,
+    // Call backend proxy endpoint (secret key stays secure on backend)
+    const response = await axios.post(
+      `${API_BASE_URL}/api/lipana/initiate-stk-push`,
       {
-        phoneNumber: paymentData.phoneNumber,
+        phone: paymentData.phoneNumber,
         amount: paymentData.amount,
-        orderId: paymentData.orderId,
-        accountReference: paymentData.accountReference || `ARUVIAH-${paymentData.orderId}`,
-        description: paymentData.description || 'Aruviah Order Payment'
+        orderId: paymentData.orderId
       },
       {
         headers: {
@@ -57,20 +37,19 @@ export const initiateMpesaPayment = async (paymentData) => {
     if (response.data.success) {
       return {
         success: true,
-        checkoutRequestId: response.data.checkoutRequestId,
-        responseCode: response.data.responseCode,
-        message: response.data.message,
+        transactionId: response.data.transactionId,
+        checkoutRequestID: response.data.checkoutRequestID,
+        message: response.data.message || 'STK push initiated successfully',
         timestamp: new Date().toISOString()
       };
     } else {
       return {
         success: false,
-        error: response.data.error || 'Failed to initiate M-Pesa payment',
-        message: response.data.message
+        error: response.data.error || 'Failed to initiate M-Pesa payment'
       };
     }
   } catch (error) {
-    console.error('M-Pesa initiation error:', error);
+    console.error('Lipana STK Push error:', error);
     return {
       success: false,
       error: error.message || 'Network error while initiating M-Pesa payment',
@@ -79,61 +58,14 @@ export const initiateMpesaPayment = async (paymentData) => {
   }
 };
 
-/**
- * Check M-Pesa payment status
- * Query the status of a payment by checkout request ID
- * 
- * @param {string} checkoutRequestId - The checkout request ID from initiation
- * @returns {Promise<Object>} Payment status information
- */
-export const checkMpesaPaymentStatus = async (checkoutRequestId) => {
-  try {
-    const response = await axiosInstance.get(
-      `/api/mpesa/payment-status/${checkoutRequestId}`
-    );
-
-    return response.data;
-  } catch (error) {
-    console.error('M-Pesa status check error:', error);
-    return {
-      success: false,
-      error: error.message || 'Failed to check payment status'
-    };
-  }
-};
 
 /**
- * Process M-Pesa payment callback
- * Called internally when M-Pesa sends callback notification
- * This updates order status in Firestore
- * 
- * @param {Object} callbackData - Data from M-Pesa callback
- * @returns {Promise<Object>} Result of processing
- */
-export const processMpesaCallback = async (callbackData) => {
-  try {
-    const response = await axiosInstance.post(
-      `/api/mpesa/callback`,
-      callbackData
-    );
-
-    return response.data;
-  } catch (error) {
-    console.error('M-Pesa callback processing error:', error);
-    return {
-      success: false,
-      error: error.message || 'Failed to process M-Pesa callback'
-    };
-  }
-};
-
-/**
- * Format phone number to M-Pesa format (254xxxxxxxxx)
+ * Format phone number to M-Pesa format (254xxxxxxxxx or +254xxxxxxxxx)
  * @param {string} phone - Phone number (various formats accepted)
  * @returns {string} Formatted phone number
  */
 export const formatPhoneNumber = (phone) => {
-  // Remove any non-digit characters
+  // Remove any non-digit characters except + at start
   let cleaned = phone.replace(/\D/g, '');
   
   // If it starts with 07, replace with 254
@@ -146,7 +78,7 @@ export const formatPhoneNumber = (phone) => {
   }
   // If it doesn't start with 254, it's invalid
   else if (!cleaned.startsWith('254')) {
-    throw new Error('Invalid phone number format');
+    throw new Error('Invalid phone number format. Use 07xx, 254xx, or +254xx format.');
   }
 
   return cleaned;
@@ -167,8 +99,8 @@ export const validateMpesaPaymentData = (paymentData) => {
     return { valid: false, error: 'Amount must be greater than 0' };
   }
 
-  if (paymentData.amount < 1) {
-    return { valid: false, error: 'Minimum M-Pesa payment is KES 1' };
+  if (paymentData.amount < 10) {
+    return { valid: false, error: 'Minimum M-Pesa payment is KES 10' };
   }
 
   if (paymentData.amount > 150000) {
@@ -191,8 +123,6 @@ export const validateMpesaPaymentData = (paymentData) => {
 
 export default {
   initiateMpesaPayment,
-  checkMpesaPaymentStatus,
-  processMpesaCallback,
   formatPhoneNumber,
   validateMpesaPaymentData
 };
