@@ -28,7 +28,7 @@ This means:
 ## What You Need to Do (5 minutes)
 
 1. **Go to Firebase Console**: https://console.firebase.google.com
-2. **Select project**: eccomerce-768db
+2. **Select project**: aruviah-7c395
 3. **Get Service Account Key**:
    - Settings (⚙️) → Project settings → Service Accounts tab
    - Click "Generate New Private Key"
@@ -36,7 +36,7 @@ This means:
 
 4. **Add to backend/.env** (one line, no breaks):
    ```env
-   FIREBASE_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"eccomerce-768db",...}
+   FIREBASE_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"aruviah-7c395",...}
    ```
    (Copy the entire JSON contents from the downloaded file)
 

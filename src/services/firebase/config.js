@@ -6,18 +6,18 @@ import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getAnalytics } from 'firebase/analytics';
 
-// Your web app's Firebase configuration
+// Use environment variables so the project can be switched without changing source
 const firebaseConfig = {
-  apiKey: "AIzaSyAQWJkpwgliF6TFtHwAZXWaF-qHXNJEwDY",
-  authDomain: "eccomerce-768db.firebaseapp.com",
-  projectId: "eccomerce-768db",
-  storageBucket: "eccomerce-768db.firebasestorage.app",
-  messagingSenderId: "1077104985410",
-  appId: "1:1077104985410:web:a776922d9e78294a7534db",
-  measurementId: "G-02GNK8LP8K"
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID,
+  measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID
 };
 
-// Initialize Firebase
+// Initialize Firebase (will use values from .env when running locally)
 const app = initializeApp(firebaseConfig);
 
 // Initialize Firebase services

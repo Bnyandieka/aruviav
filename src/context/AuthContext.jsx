@@ -11,7 +11,7 @@ import {
   signInWithPopup,
   sendEmailVerification
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
+import { doc, setDoc, getDoc, onSnapshot, collection, query, limit, getDocs } from 'firebase/firestore';
 // Import the already initialized Firebase instances
 import { auth, db } from '../services/firebase/config';
 // Import email automation
@@ -41,7 +41,9 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Monitor auth state changes with real-time Firestore updates
-  useEffect(() => {    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {      setUser(currentUser);
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
       setIsAuthenticated(!!currentUser);
       
       if (currentUser) {
@@ -49,8 +51,10 @@ export const AuthProvider = ({ children }) => {
         const userDocRef = doc(db, 'users', currentUser.uid);
         const unsubscribeSnapshot = onSnapshot(userDocRef, (userDoc) => {
           if (userDoc.exists()) {
-            const data = userDoc.data();            setUserData(data);
-          } else {            setUserData(null);
+            const data = userDoc.data();
+            setUserData(data);
+          } else {
+            setUserData(null);
           }
         }, (error) => {
           console.error('Error listening to user data:', error);
@@ -80,6 +84,12 @@ export const AuthProvider = ({ children }) => {
         displayName: displayName
       });
 
+      // Check if this is the first user
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, limit(1));
+      const snapshot = await getDocs(q);
+      const isFirstUser = snapshot.empty;
+
       // Create user document in Firestore
       const userDocRef = doc(db, 'users', user.uid);
       const userData = {
@@ -88,11 +98,11 @@ export const AuthProvider = ({ children }) => {
         displayName: displayName,
         createdAt: new Date().toISOString(),
         photoURL: user.photoURL || null,
-        isAdmin: false,
+        isAdmin: isFirstUser ? true : false,
         verified: false,
         emailVerified: false,
         signupMethod: 'email', // Track that this is email signup (not social)
-        role: 'customer',
+        role: isFirstUser ? 'admin' : 'customer',
         preferences: {
           emailNotifications: true,
           pushNotifications: true,
@@ -117,19 +127,26 @@ export const AuthProvider = ({ children }) => {
         wishlist: []
       };
 
-      await setDoc(userDocRef, userData);
-      setUserData(userData);
+      try {
+        await setDoc(userDocRef, userData);
+        setUserData(userData);
+      } catch (err) {
+        console.error('Failed to create user document:', err);
+        return { success: false, error: 'Failed to create user profile: ' + (err.message || err) };
+      }
 
       // Send email verification link
       try {
-        await sendEmailVerification(user);      } catch (verificationError) {
+        await sendEmailVerification(user);
+      } catch (verificationError) {
         console.error('⚠️ Error sending verification email:', verificationError);
         // Don't fail signup if email fails
       }
 
       // Send account confirmation email with Brevo
       try {
-        await sendAccountConfirmationEmail(email, displayName);      } catch (emailError) {
+        await sendAccountConfirmationEmail(email, displayName);
+      } catch (emailError) {
         console.error('⚠️ Email service error (account still created):', emailError);
         // Don't fail signup if email fails
       }
@@ -164,6 +181,12 @@ export const AuthProvider = ({ children }) => {
       const userDoc = await getDoc(userDocRef);
 
       if (!userDoc.exists()) {
+        // Check if this is the first user
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, limit(1));
+        const snapshot = await getDocs(q);
+        const isFirstUser = snapshot.empty;
+
         // Create new user document
         const userData = {
           uid: user.uid,
@@ -171,9 +194,9 @@ export const AuthProvider = ({ children }) => {
           displayName: user.displayName,
           createdAt: new Date().toISOString(),
           photoURL: user.photoURL,
-          isAdmin: false,
+          isAdmin: isFirstUser ? true : false,
           verified: false,
-          role: 'customer',
+          role: isFirstUser ? 'admin' : 'customer',
           preferences: {
             emailNotifications: true,
             pushNotifications: true,
@@ -202,7 +225,8 @@ export const AuthProvider = ({ children }) => {
 
         // Send welcome email
         try {
-          await sendAccountConfirmationEmail(user.email, user.displayName || 'User');        } catch (emailError) {
+          await sendAccountConfirmationEmail(user.email, user.displayName || 'User');
+        } catch (emailError) {
           console.error('⚠️ Email service error:', emailError);
         }
       }
@@ -231,7 +255,8 @@ export const AuthProvider = ({ children }) => {
   // Send OTP to phone number
   const sendPhoneVerificationOTP = async (phoneNumber) => {
     try {
-      const formattedPhone = formatPhoneNumber(phoneNumber);      const confirmationResult = await sendPhoneOTP(formattedPhone);
+      const formattedPhone = formatPhoneNumber(phoneNumber);
+      const confirmationResult = await sendPhoneOTP(formattedPhone);
       return { success: true, confirmationResult };
     } catch (error) {
       console.error('Error sending phone OTP:', error);
@@ -241,7 +266,8 @@ export const AuthProvider = ({ children }) => {
 
   // Verify OTP and complete phone authentication
   const verifyPhoneCode = async (confirmationResult, otp, displayName) => {
-    try {      const user = await verifyPhoneOTP(confirmationResult, otp);
+    try {
+      const user = await verifyPhoneOTP(confirmationResult, otp);
       
       // Complete signup - create user profile
       const userData = await completePhoneSignup(user, displayName);
@@ -254,7 +280,8 @@ export const AuthProvider = ({ children }) => {
       // Send welcome SMS/email if available
       try {
         if (user.email) {
-          await sendAccountConfirmationEmail(user.email, displayName);        }
+          await sendAccountConfirmationEmail(user.email, displayName);
+        }
       } catch (error) {
         console.warn('⚠️ Could not send welcome message:', error.message);
       }
@@ -278,7 +305,8 @@ export const AuthProvider = ({ children }) => {
     logout,
     sendPhoneVerificationOTP,
     verifyPhoneCode
-  };  return (
+  };
+  return (
     <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>

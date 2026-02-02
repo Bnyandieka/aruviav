@@ -95,7 +95,7 @@ Result: { success: true, emails: [...] }
 
 **Fix:**
 1. Go to [Firebase Console](https://console.firebase.google.com)
-2. Select your project: `eccomerce-768db`
+2. Select your project: `aruviah-7c395`
 3. Go to **Firestore Database** → **Rules**
 4. Replace rules with:
 
@@ -157,7 +157,7 @@ Should show `true` and a number > 10
 
 **To create manually:**
 1. Go to [Firebase Console](https://console.firebase.google.com)
-2. Select project: `eccomerce-768db`
+2. Select project: `aruviah-7c395`
 3. Go to **Firestore Database**
 4. Click **Start Collection**
 5. Collection ID: `admin_emails`

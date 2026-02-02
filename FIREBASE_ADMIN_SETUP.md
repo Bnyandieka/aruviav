@@ -15,7 +15,7 @@ You need to generate a Firebase Service Account key and configure it in your bac
 
 ### 1a. Go to Firebase Console
 - Visit https://console.firebase.google.com
-- Select your project: **eccomerce-768db**
+    - Select your project: **aruviah-7c395**
 
 ### 1b. Navigate to Service Accounts
 1. Click **⚙️ Settings** (gear icon) → **Project settings**
@@ -27,7 +27,7 @@ The file will look like:
 ```json
 {
   "type": "service_account",
-  "project_id": "eccomerce-768db",
+    "project_id": "aruviah-7c395",
   "private_key_id": "...",
   "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
   "client_email": "firebase-adminsdk-...@eccomerce-768db.iam.gserviceaccount.com",
@@ -49,7 +49,7 @@ Choose **ONE** of these methods:
 1. Copy the entire JSON key file contents
 2. Add to `backend/.env`:
 ```bash
-FIREBASE_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"eccomerce-768db",...}
+FIREBASE_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"aruviah-7c395",...}
 ```
 
 3. The backend will automatically parse it
@@ -73,7 +73,7 @@ Add one of these to `backend/.env`:
 
 **Option A (Environment Variable):**
 ```env
-FIREBASE_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"eccomerce-768db",...}
+    FIREBASE_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"aruviah-7c395",...}
 ```
 
 **Option B (File Path):**

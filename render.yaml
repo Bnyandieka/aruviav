@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: shopki-backend
+    runtime: node
+    plan: starter
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: FIREBASE_SERVICE_ACCOUNT
+        scope: build
+      - key: BREVO_API_KEY
+        scope: build
+      - key: BREVO_SENDER_EMAIL
+        scope: build
+      - key: REACT_APP_BASE_URL
+        value: https://your-frontend-url.com
+      - key: LIPANA_PUBLISHABLE_KEY
+        scope: build
+      - key: LIPANA_SECRET_KEY
+        scope: build
+      - key: LIPANA_WEBHOOK_SECRET
+        scope: build
+      - key: LIPANA_WEBHOOK_URL
+        scope: build

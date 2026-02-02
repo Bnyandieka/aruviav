@@ -30,6 +30,8 @@ const ProductDetailsPage = () => {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [variants, setVariants] = useState([]);
+  const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [relatedProducts, setRelatedProducts] = useState([]);
@@ -55,6 +57,8 @@ const ProductDetailsPage = () => {
         if (productSnap.exists()) {
           const productData = { id: productSnap.id, ...productSnap.data() };
           setProduct(productData);
+          setVariants(productData.variants || []);
+          setSelectedVariantIndex(0);
           
           // Fetch related products
           await fetchRelatedProducts(productData.category);
@@ -117,7 +121,7 @@ const ProductDetailsPage = () => {
 
   // Handle quantity changes
   const handleQuantityChange = (type) => {
-    if (type === 'increase' && quantity < product.stock) {
+    if (type === 'increase' && quantity < currentStock) {
       setQuantity(quantity + 1);
     } else if (type === 'decrease' && quantity > 1) {
       setQuantity(quantity - 1);
@@ -140,7 +144,7 @@ const ProductDetailsPage = () => {
 
   // Handle add to cart
   const handleAddToCart = () => {
-    if (product.stock === 0) {
+    if (currentStock === 0) {
       addNotification({
         type: 'error',
         title: 'Out of Stock',
@@ -148,9 +152,10 @@ const ProductDetailsPage = () => {
       });
       return;
     }
-    // Add the product to cart with the selected quantity
+    // Add the product to cart with the selected quantity (include variant if selected)
+    const itemToAdd = selectedVariant ? { ...product, variant: selectedVariant } : product;
     for (let i = 0; i < quantity; i++) {
-      addToCart(product);
+      addToCart(itemToAdd);
     }
     addNotification({
       type: 'success',
@@ -234,7 +239,8 @@ const ProductDetailsPage = () => {
       await updateDoc(productRef, {
         reviewCount: newReviewCount,
         rating: parseFloat(newRating.toFixed(1)),
-      });      addNotification({
+      });
+      addNotification({
         type: 'success',
         title: 'Review Submitted',
         message: 'Thank you for your review!',
@@ -261,16 +267,26 @@ const ProductDetailsPage = () => {
     }
   };
 
-  // Get product images
-  const productImages = product?.images && Array.isArray(product.images) && product.images.length > 0
-    ? product.images
-    : product?.image 
-    ? [product.image]
-    : ['https://via.placeholder.com/600x600?text=No+Image'];
+  // Variant-aware selection
+  const selectedVariant = variants && variants.length > 0 ? variants[selectedVariantIndex] : null;
+
+  const productImages = (selectedVariant && ((selectedVariant.images && Array.isArray(selectedVariant.images) && selectedVariant.images.length > 0) || selectedVariant.image))
+    ? (selectedVariant.images && selectedVariant.images.length > 0 ? selectedVariant.images : [selectedVariant.image])
+    : (product?.images && Array.isArray(product.images) && product.images.length > 0
+      ? product.images
+      : product?.image
+        ? [product.image]
+        : ['https://via.placeholder.com/600x600?text=No+Image']
+    );
+
+  // Current pricing/stock (variant-aware)
+  const currentPrice = selectedVariant?.price ?? product?.price ?? 0;
+  const currentOriginalPrice = selectedVariant?.originalPrice ?? product?.originalPrice ?? 0;
+  const currentStock = selectedVariant?.stock ?? product?.stock ?? 0;
 
   // Calculate discount
-  const discountPercent = product?.originalPrice && product?.price
-    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+  const discountPercent = currentOriginalPrice && currentPrice
+    ? Math.round(((currentOriginalPrice - currentPrice) / currentOriginalPrice) * 100)
     : 0;
 
   if (loading) {
@@ -321,7 +337,7 @@ const ProductDetailsPage = () => {
                   -{discountPercent}% OFF
                 </div>
               )}
-              {product.stock === 0 && (
+              {currentStock === 0 && (
                 <div className="absolute top-3 sm:top-4 right-3 sm:right-4 bg-red-500 text-white text-xs sm:text-sm font-bold px-2 sm:px-3 py-1 rounded z-10">
                   Out of Stock
                 </div>
@@ -363,6 +379,31 @@ const ProductDetailsPage = () => {
                 ))}
               </div>
             )}
+            {/* Variant Selectors */}
+            {variants.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto pb-3 px-3 sm:px-4 bg-gray-50">
+                {variants.map((v, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      setSelectedVariantIndex(idx);
+                      setSelectedImage(0);
+                      setImageError(false);
+                      setQuantity(1);
+                    }}
+                    className={`flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition ${selectedVariantIndex === idx ? 'border-orange-500' : 'border-gray-200 hover:border-orange-300'}`}
+                  >
+                    { (v.image || (v.images && v.images[0])) ? (
+                      <img src={v.image || (v.images && v.images[0])} alt={v.name || product.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-xs text-gray-700">
+                        {v.name || v.option || 'Option'}
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Product Info Card - Full Width Below Image */}
@@ -394,29 +435,29 @@ const ProductDetailsPage = () => {
             <div className="mb-4 border-b pb-4">
               <div className="flex items-baseline gap-2 mb-2">
                 <span className="text-3xl sm:text-4xl font-bold text-orange-500">
-                  KSh {product.price?.toLocaleString()}
+                  KSh {Number(currentPrice).toLocaleString()}
                 </span>
-                {product.originalPrice && product.originalPrice > product.price && (
+                {currentOriginalPrice && currentOriginalPrice > currentPrice && (
                   <span className="text-lg sm:text-xl text-gray-400 line-through">
-                    KSh {product.originalPrice?.toLocaleString()}
+                    KSh {Number(currentOriginalPrice).toLocaleString()}
                   </span>
                 )}
               </div>
               {discountPercent > 0 && (
                 <p className="text-green-600 font-semibold text-xs sm:text-sm">
-                  You save KSh {(product.originalPrice - product.price).toLocaleString()} ({discountPercent}%)
+                  You save KSh {(Number(currentOriginalPrice) - Number(currentPrice)).toLocaleString()} ({discountPercent}%)
                 </p>
               )}
             </div>
 
             {/* Stock Status */}
             <div className="mb-4">
-              {product.stock > 0 ? (
+              {currentStock > 0 ? (
                 <div>
                   <p className="text-green-600 font-semibold text-sm">In Stock</p>
-                  {product.stock <= 10 && (
+                  {currentStock <= 10 && (
                     <p className="text-orange-600 text-xs">
-                      Only {product.stock} items left
+                      Only {currentStock} items left
                     </p>
                   )}
                 </div>
@@ -426,7 +467,7 @@ const ProductDetailsPage = () => {
             </div>
 
             {/* Quantity Selector */}
-            {product.stock > 0 && (
+            {currentStock > 0 && (
               <div className="mb-5">
                 <label className="block text-xs sm:text-sm font-medium mb-2">Quantity:</label>
                 <div className="flex items-center gap-3">
@@ -442,13 +483,13 @@ const ProductDetailsPage = () => {
                     <button
                       onClick={() => handleQuantityChange('increase')}
                       className="p-2 hover:bg-gray-100 transition"
-                      disabled={quantity >= product.stock}
+                      disabled={quantity >= currentStock}
                     >
-                      <FiPlus size={14} className={quantity >= product.stock ? 'text-gray-300' : 'text-gray-600'} />
+                      <FiPlus size={14} className={quantity >= currentStock ? 'text-gray-300' : 'text-gray-600'} />
                     </button>
                   </div>
                   <span className="text-xs text-gray-600">
-                    ({product.stock} available)
+                    ({currentStock} available)
                   </span>
                 </div>
               </div>
@@ -458,7 +499,7 @@ const ProductDetailsPage = () => {
             <div className="space-y-2 mb-5">
               <button
                 onClick={handleAddToCart}
-                disabled={product.stock === 0}
+                disabled={currentStock === 0}
                 className="w-full bg-orange-500 text-white py-3 sm:py-4 rounded-lg font-semibold text-sm sm:text-base hover:bg-orange-600 transition flex items-center justify-center gap-2 disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
                 <FiShoppingCart size={18} />

@@ -10,12 +10,12 @@ Copy and paste this entire code into your browser console (F12 > Console tab):
   const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js');
   
   const config = {
-    apiKey: "AIzaSyAQWJkpwgliF6TFtHwAZXWaF-qHXNJEwDY",
-    authDomain: "eccomerce-768db.firebaseapp.com",
-    projectId: "eccomerce-768db",
-    storageBucket: "eccomerce-768db.firebasestorage.app",
-    messagingSenderId: "1077104985410",
-    appId: "1:1077104985410:web:a776922d9e78294a7534db",
+    apiKey: "AIzaSyCP9oMp9GhpfLJIeRzT029hxE4VuRXabpw",
+    authDomain: "aruviah-7c395.firebaseapp.com",
+    projectId: "aruviah-7c395",
+    storageBucket: "aruviah-7c395.firebasestorage.app",
+    messagingSenderId: "59625618979",
+    appId: "1:59625618979:web:5ce3fe28eb574d45c63b96",
   };
   
   const app = initializeApp(config);

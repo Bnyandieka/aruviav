@@ -16,8 +16,21 @@ import {
   confirmPasswordReset,
   verifyPasswordResetCode
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, serverTimestamp, collection, query, limit, getDocs } from 'firebase/firestore';
 import { auth, db } from './config';
+
+// Helper function: Check if this is the first user in the system
+const isFirstUser = async () => {
+  try {
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, limit(1));
+    const snapshot = await getDocs(q);
+    return snapshot.empty; // true if no users exist
+  } catch (error) {
+    console.error('Error checking if first user:', error);
+    return false;
+  }
+};
 
 // Sign up with email and password
 export const signUpWithEmail = async (email, password, displayName) => {
@@ -31,13 +44,17 @@ export const signUpWithEmail = async (email, password, displayName) => {
       displayName: displayName
     });
 
+    // Check if this is the first user
+    const firstUser = await isFirstUser();
+
     // Create user document in Firestore
     await setDoc(doc(db, 'users', user.uid), {
       uid: user.uid,
       email: user.email,
       displayName: displayName,
       photoURL: user.photoURL || null,
-      role: 'customer', // default role
+      role: firstUser ? 'admin' : 'customer',
+      isAdmin: firstUser ? true : false,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
@@ -89,12 +106,16 @@ export const signInWithGoogle = async () => {
     const userDoc = await getDoc(userDocRef);
 
     if (!userDoc.exists()) {
+      // Check if this is the first user
+      const firstUser = await isFirstUser();
+
       await setDoc(userDocRef, {
         uid: user.uid,
         email: user.email,
         displayName: user.displayName,
         photoURL: user.photoURL,
-        role: 'customer',
+        role: firstUser ? 'admin' : 'customer',
+        isAdmin: firstUser ? true : false,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });

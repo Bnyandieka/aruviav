@@ -134,6 +134,57 @@ app.post('/api/send-email', async (req, res) => {
 });
 
 /**
+ * POST /api/lipana/reconcile
+ * Admin helper: reconcile a Lipana transactionId with an order and apply status updates.
+ * Body: { transactionId: string, status?: 'completed'|'failed' }
+ */
+app.post('/api/lipana/reconcile', async (req, res) => {
+  try {
+    const { transactionId, status } = req.body || {};
+    if (!transactionId) return res.status(400).json({ success: false, error: 'transactionId required' });
+    if (!adminDb) return res.status(500).json({ success: false, error: 'Firebase Admin not configured' });
+
+    const txRef = adminDb.collection('transactions').doc(String(transactionId));
+    const txSnap = await txRef.get();
+    if (txSnap.exists) {
+      const tx = txSnap.data();
+      const orderId = tx.orderId;
+      if (!orderId) return res.status(404).json({ success: false, error: 'Mapping exists but orderId missing' });
+      const orderRef = adminDb.collection('orders').doc(String(orderId));
+      const targetStatus = status || 'completed';
+      await orderRef.update({
+        paymentStatus: targetStatus,
+        lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
+        transaction: {
+          id: transactionId,
+          checkoutRequestId: tx.checkoutRequestId || null,
+          raw: tx || null
+        }
+      });
+      return res.json({ success: true, message: `Order ${orderId} updated to ${targetStatus}` });
+    }
+
+    // Fallback: try to find order by transactionId field
+    const ordersRef = adminDb.collection('orders');
+    const q = ordersRef.where('transaction.id', '==', transactionId).limit(1);
+    const snaps = await q.get();
+    if (!snaps.empty) {
+      const doc = snaps.docs[0];
+      await doc.ref.update({
+        paymentStatus: status || 'completed',
+        lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+      });
+      return res.json({ success: true, message: `Order ${doc.id} updated` });
+    }
+
+    return res.status(404).json({ success: false, error: 'No mapping or order found for transactionId' });
+  } catch (err) {
+    console.error('Reconcile error:', err);
+    res.status(500).json({ success: false, error: err.message || err });
+  }
+});
+
+/**
  * ========== M-PESA PAYMENT INTEGRATION ==========
  * Handles M-Pesa STK Push payments (Lipa Na M-Pesa Online)
  * 
@@ -568,7 +619,7 @@ async function getEmailTemplate(templateType) {
  */
 function replaceTemplateVariables(template, variables) {
   let result = template;
-  for (const [key, value] = Object.entries(variables)) {
+  for (const [key, value] of Object.entries(variables)) {
     const regex = new RegExp(`{{${key}}}`, 'g');
     result = result.replace(regex, value || '');
   }
@@ -578,15 +629,7 @@ function replaceTemplateVariables(template, variables) {
 /**
  * Get Brevo client for sending emails
  */
-function getBrevClient() {
-  return axios.create({
-    baseURL: 'https://api.brevo.com/v3',
-    headers: {
-      'api-key': process.env.REACT_APP_BREVO_API_KEY,
-      'Content-Type': 'application/json'
-    }
-  });
-}
+// Reuse the `getBrevClient` defined earlier near the top of this file.
 
 /**
  * Send transactional email via Brevo
@@ -974,9 +1017,21 @@ app.post('/api/lipana/webhook', async (req, res) => {
     
     console.log(`   Status (normalized): ${normalizedStatus}`);
 
-    // Attempt server-side Firestore update if admin initialized
-    if (adminDb) {
+    // ACK the webhook immediately to stop Lipana retries; process update asynchronously
+    try {
+      res.status(200).json({ success: true, received: true });
+    } catch (ackErr) {
+      console.warn('Could not send immediate ACK to Lipana webhook:', ackErr && ackErr.message);
+    }
+
+    // Asynchronous processing to avoid blocking the webhook response
+    (async () => {
       try {
+        if (!adminDb) {
+          console.log('Skipping Firestore update: Firebase Admin not initialized');
+          return;
+        }
+
         let orderDocRef = null;
 
         if (orderId) {
@@ -1013,6 +1068,39 @@ app.post('/api/lipana/webhook', async (req, res) => {
             q = ordersRef.where('checkoutRequestID', '==', checkoutRequestId).limit(1);
             console.log(`🔍 Searching for order by checkoutRequestID: ${checkoutRequestId}`);
           } else if (transactionId) {
+            // Try simple mapping lookup first (fast path)
+            try {
+              const txRef = adminDb.collection('transactions').doc(String(transactionId));
+              const txSnap = await txRef.get();
+              if (txSnap.exists) {
+                const txData = txSnap.data();
+                if (txData && txData.orderId) {
+                  const docRef = adminDb.collection('orders').doc(String(txData.orderId));
+                  const docSnap = await docRef.get();
+                  if (docSnap.exists) {
+                    const existing = docSnap.data();
+                    const targetStatus = normalizedStatus === 'completed' ? 'completed' : (normalizedStatus === 'failed' ? 'failed' : 'pending');
+                    if (existing.transaction && existing.transaction.id && String(existing.transaction.id) === String(transactionId) && existing.paymentStatus === targetStatus) {
+                      console.log(`ℹ️ Webhook duplicate - order ${txData.orderId} already up-to-date`);
+                    } else {
+                      await docRef.update({
+                        paymentStatus: targetStatus,
+                        lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
+                        transaction: {
+                          id: transactionId || null,
+                          checkoutRequestId: checkoutRequestId || null,
+                          raw: data
+                        }
+                      });
+                      console.log(`✅ Updated order ${txData.orderId} via transactions mapping to ${normalizedStatus}`);
+                    }
+                    return;
+                  }
+                }
+              }
+            } catch (mapErr) {
+              console.warn('Transaction mapping lookup failed, falling back to query:', mapErr && mapErr.message);
+            }
             q = ordersRef.where('transactionId', '==', transactionId).limit(1);
             console.log(`🔍 Searching for order by transactionId: ${transactionId}`);
           }
@@ -1048,14 +1136,9 @@ app.post('/api/lipana/webhook', async (req, res) => {
           console.warn('Webhook payload did not include orderId or transaction identifiers');
         }
       } catch (err) {
-        console.error('Error updating Firestore from Lipana webhook:', err);
+        console.error('Error updating Firestore from Lipana webhook (async):', err);
       }
-    } else {
-      console.log('Skipping Firestore update: Firebase Admin not initialized');
-    }
-
-    // Return 200 quickly to Lipana
-    res.status(200).json({ success: true });
+    })();
   } catch (error) {
     console.error('Error handling Lipana webhook:', error);
     res.status(500).json({ success: false });
@@ -1067,9 +1150,7 @@ app.post('/api/lipana/webhook', async (req, res) => {
  * Health check endpoint
  */
 app.get('/api/health', (req, res) => {
-  const sgStatus = process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY !== 'your_sendgrid_api_key_here'
-    ? 'configured'
-    : 'not_configured';
+  const brevoStatus = process.env.REACT_APP_BREVO_API_KEY ? 'configured' : 'not_configured';
   
   const mpesaStatus = process.env.MPESA_CONSUMER_KEY && process.env.MPESA_CONSUMER_KEY !== 'your_key'
     ? 'configured'
@@ -1078,7 +1159,7 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     message: 'Payment API server is running',
-    sendgrid: sgStatus,
+    brevo: brevoStatus,
     mpesa: mpesaStatus,
     timestamp: new Date().toISOString()
   });
@@ -1120,8 +1201,8 @@ app.post('/api/chat/notify-provider', async (req, res) => {
       });
     }
     console.log(`   From: ${senderName} (${senderEmail})`);
-    // Check if SendGrid is configured
-    if (!process.env.SENDGRID_API_KEY || process.env.SENDGRID_API_KEY === 'your_sendgrid_api_key_here') {
+    // Check if Brevo is configured
+    if (!process.env.REACT_APP_BREVO_API_KEY) {
       console.log('   Status: ⚠️ LOGGED TO CONSOLE (SendGrid not configured)');
       console.log('   Message Preview:', message.substring(0, 100) + '...');
       
@@ -1172,14 +1253,11 @@ ${message}
 Reply to this message by logging into your Shopki account.
     `;
 
-    // Send email via SendGrid
-    await sgMail.send({
-      to: providerEmail,
-      from: process.env.SENDGRID_FROM_EMAIL || 'support@shopki.com',
+    // Send email via Brevo (uses sendTransactionalEmail helper)
+    await sendTransactionalEmail({
+      email: providerEmail,
       subject: `New Message from ${senderName} - ${serviceName}`,
-      text: emailText,
-      html: emailHtml,
-      replyTo: senderEmail
+      htmlContent: emailHtml
     });
     return res.json({
       success: true,
@@ -1216,14 +1294,14 @@ app.post('/api/chat/notify-customer', async (req, res) => {
         error: 'Missing required fields'
       });
     }
-    // Check if SendGrid is configured
-    if (!process.env.SENDGRID_API_KEY || process.env.SENDGRID_API_KEY === 'your_sendgrid_api_key_here') {
-      console.log('   Status: ⚠️ LOGGED TO CONSOLE (SendGrid not configured)');
+    // Check if Brevo is configured
+    if (!process.env.REACT_APP_BREVO_API_KEY) {
+      console.log('   Status: ⚠️ LOGGED TO CONSOLE (Brevo not configured)');
       console.log('   Message Preview:', message.substring(0, 100) + '...');
       
       return res.json({
         success: true,
-        message: 'Notification logged to console (SendGrid not configured)',
+        message: 'Notification logged to console (Brevo not configured)',
         status: 'logged'
       });
     }
@@ -1268,13 +1346,11 @@ ${message}
 View the full conversation by logging into your Shopki account.
     `;
 
-    // Send email via SendGrid
-    await sgMail.send({
-      to: customerEmail,
-      from: process.env.SENDGRID_FROM_EMAIL || 'support@shopki.com',
+    // Send email via Brevo
+    await sendTransactionalEmail({
+      email: customerEmail,
       subject: `New Reply from ${providerName} - ${serviceName}`,
-      text: emailText,
-      html: emailHtml
+      htmlContent: emailHtml
     });
     return res.json({
       success: true,
@@ -1321,11 +1397,11 @@ app.post('/api/booking/notify-vendor', async (req, res) => {
         error: 'Missing required fields'
       });
     }
-    if (!process.env.SENDGRID_API_KEY || process.env.SENDGRID_API_KEY === 'your_sendgrid_api_key_here') {
-      console.log('   Status: ⚠️ LOGGED TO CONSOLE (SendGrid not configured)');
+    if (!process.env.REACT_APP_BREVO_API_KEY) {
+      console.log('   Status: ⚠️ LOGGED TO CONSOLE (Brevo not configured)');
       return res.json({
         success: true,
-        message: 'Notification logged to console (SendGrid not configured)',
+        message: 'Notification logged to console (Brevo not configured)',
         status: 'logged'
       });
     }
@@ -1391,13 +1467,10 @@ Next Steps:
 3. Contact the customer via the chat feature if needed
     `;
 
-    await sgMail.send({
-      to: vendorEmail,
-      from: process.env.SENDGRID_FROM_EMAIL || 'support@shopki.com',
+    await sendTransactionalEmail({
+      email: vendorEmail,
       subject: `New Booking Request - ${serviceName}`,
-      text: emailText,
-      html: emailHtml,
-      replyTo: customerEmail
+      htmlContent: emailHtml
     });
     return res.json({
       success: true,
@@ -1435,11 +1508,11 @@ app.post('/api/booking/notify-customer', async (req, res) => {
         error: 'Missing required fields'
       });
     }
-    if (!process.env.SENDGRID_API_KEY || process.env.SENDGRID_API_KEY === 'your_sendgrid_api_key_here') {
-      console.log('   Status: ⚠️ LOGGED TO CONSOLE (SendGrid not configured)');
+    if (!process.env.REACT_APP_BREVO_API_KEY) {
+      console.log('   Status: ⚠️ LOGGED TO CONSOLE (Brevo not configured)');
       return res.json({
         success: true,
-        message: 'Confirmation logged to console (SendGrid not configured)',
+        message: 'Confirmation logged to console (Brevo not configured)',
         status: 'logged'
       });
     }
@@ -1501,13 +1574,10 @@ If you have any questions, you can reply to this email or contact the service pr
 © 2024 Shopki. All rights reserved.
     `;
 
-    await sgMail.send({
-      to: customerEmail,
-      from: process.env.SENDGRID_FROM_EMAIL || 'support@shopki.com',
+    await sendTransactionalEmail({
+      email: customerEmail,
       subject: `Booking Confirmation - ${serviceName}`,
-      text: emailText,
-      html: emailHtml,
-      replyTo: customerEmail
+      htmlContent: emailHtml
     });
     return res.json({
       success: true,
@@ -1545,11 +1615,11 @@ app.post('/api/booking/notify-customer-acceptance', async (req, res) => {
         error: 'Missing required fields'
       });
     }
-    if (!process.env.SENDGRID_API_KEY || process.env.SENDGRID_API_KEY === 'your_sendgrid_api_key_here') {
-      console.log('   Status: ⚠️ LOGGED TO CONSOLE (SendGrid not configured)');
+    if (!process.env.REACT_APP_BREVO_API_KEY) {
+      console.log('   Status: ⚠️ LOGGED TO CONSOLE (Brevo not configured)');
       return res.json({
         success: true,
-        message: 'Notification logged to console (SendGrid not configured)',
+        message: 'Notification logged to console (Brevo not configured)',
         status: 'logged'
       });
     }
@@ -1602,12 +1672,10 @@ ${vendorNotes ? `Vendor Notes:\n${vendorNotes}` : ''}
 You can now communicate with the service provider via the chat feature.
     `;
 
-    await sgMail.send({
-      to: customerEmail,
-      from: process.env.SENDGRID_FROM_EMAIL || 'support@shopki.com',
+    await sendTransactionalEmail({
+      email: customerEmail,
       subject: `Booking Confirmed - ${serviceName}`,
-      text: emailText,
-      html: emailHtml
+      htmlContent: emailHtml
     });
     return res.json({
       success: true,
@@ -1646,11 +1714,11 @@ app.post('/api/booking/notify-customer-reschedule', async (req, res) => {
         error: 'Missing required fields'
       });
     }
-    if (!process.env.SENDGRID_API_KEY || process.env.SENDGRID_API_KEY === 'your_sendgrid_api_key_here') {
-      console.log('   Status: ⚠️ LOGGED TO CONSOLE (SendGrid not configured)');
+    if (!process.env.REACT_APP_BREVO_API_KEY) {
+      console.log('   Status: ⚠️ LOGGED TO CONSOLE (Brevo not configured)');
       return res.json({
         success: true,
-        message: 'Notification logged to console (SendGrid not configured)',
+        message: 'Notification logged to console (Brevo not configured)',
         status: 'logged'
       });
     }
@@ -1704,12 +1772,10 @@ ${reason ? `Reason:\n${reason}` : ''}
 If you have questions, contact the service provider through the chat feature.
     `;
 
-    await sgMail.send({
-      to: customerEmail,
-      from: process.env.SENDGRID_FROM_EMAIL || 'support@shopki.com',
+    await sendTransactionalEmail({
+      email: customerEmail,
       subject: `Booking Rescheduled - ${serviceName}`,
-      text: emailText,
-      html: emailHtml
+      htmlContent: emailHtml
     });
     return res.json({
       success: true,
@@ -1816,6 +1882,44 @@ app.post('/api/lipana/initiate-stk-push', async (req, res) => {
         nextSteps: 'Payment confirmation will be processed automatically.'
       };
       
+      // Persist a lightweight transaction->order mapping and stamp order (if Firestore admin configured)
+      if (adminDb) {
+        (async () => {
+          try {
+            const txId = String(lipanaData.data?.transactionId || transactionResponse.transaction.id || '') || '';
+            if (txId) {
+              const txRef = adminDb.collection('transactions').doc(txId);
+              await txRef.set({
+                orderId: orderId || null,
+                checkoutRequestId: lipanaData.data?.checkoutRequestID || null,
+                amount: parseInt(amount) || null,
+                phone: formattedPhone || null,
+                status: 'pending',
+                createdAt: admin.firestore.FieldValue.serverTimestamp()
+              }, { merge: true });
+              console.log(`✅ Wrote transaction mapping transactions/${txId} -> order ${orderId}`);
+            }
+
+            // Also write minimal transaction info on the order document to make future lookups fast
+            if (orderId) {
+              const orderRef = adminDb.collection('orders').doc(String(orderId));
+              await orderRef.set({
+                transaction: {
+                  id: txId || null,
+                  checkoutRequestId: lipanaData.data?.checkoutRequestID || null,
+                  raw: lipanaData.data || null
+                },
+                checkoutRequestID: lipanaData.data?.checkoutRequestID || null,
+                lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+              }, { merge: true });
+              console.log(`✅ Stamped order ${orderId} with transaction id ${txId}`);
+            }
+          } catch (err) {
+            console.error('Error writing transaction mapping or stamping order:', err && err.message ? err.message : err);
+          }
+        })();
+      }
+
       console.log('📤 Sending transaction response to frontend');
       return res.json(transactionResponse);
     } else {
@@ -1860,6 +1964,120 @@ app.listen(PORT, () => {
   console.log('\n🚀 ===============================================');
   console.log(`✅ BACKEND SERVER RUNNING ON PORT ${PORT}`);
   console.log('🚀 ===============================================\n');
-  console.log(`SendGrid Status: ${process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY !== 'your_sendgrid_api_key_here' ? '✅ Configured' : '⚠️ Not configured (emails logged to console)'}`);
+  console.log(`Brevo Status: ${process.env.REACT_APP_BREVO_API_KEY ? '✅ Configured' : '⚠️ Not configured (emails logged to console)'}`);
   console.log(`Lipana Status: ${process.env.LIPANA_SECRET_KEY ? '✅ Configured' : '⚠️ Not configured'}\n`);
+});
+
+/**
+ * PayPal create & capture endpoints
+ */
+app.post('/api/payments/paypal/create', async (req, res) => {
+  try {
+    const { amount } = req.body;
+    if (!amount) return res.status(400).json({ error: 'Amount is required' });
+
+    const PAYPAL_MODE = process.env.PAYPAL_MODE || 'sandbox';
+    const base = PAYPAL_MODE === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
+    const clientId = process.env.PAYPAL_CLIENT_ID;
+    const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
+    if (!clientId || !clientSecret) return res.status(500).json({ error: 'PayPal credentials not configured' });
+
+    // Get access token
+    const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+    const tokenResp = await axios.post(`${base}/v1/oauth2/token`, 'grant_type=client_credentials', {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Authorization: `Basic ${auth}`
+      }
+    });
+    const accessToken = tokenResp.data.access_token;
+
+    // Create order
+    const currency = process.env.PAYPAL_CURRENCY || 'USD';
+    const orderResp = await axios.post(`${base}/v2/checkout/orders`, {
+      intent: 'CAPTURE',
+      purchase_units: [{ amount: { currency_code: currency, value: Number(amount).toFixed(2) } }]
+    }, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    return res.json({ orderID: orderResp.data.id, data: orderResp.data });
+  } catch (error) {
+    console.error('PayPal create error:', error.response?.data || error.message);
+    res.status(500).json({ error: error.response?.data || error.message });
+  }
+});
+
+app.post('/api/payments/paypal/capture', async (req, res) => {
+  try {
+    const { orderID } = req.body;
+    if (!orderID) return res.status(400).json({ error: 'orderID is required' });
+
+    const PAYPAL_MODE = process.env.PAYPAL_MODE || 'sandbox';
+    const base = PAYPAL_MODE === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
+    const clientId = process.env.PAYPAL_CLIENT_ID;
+    const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
+    if (!clientId || !clientSecret) return res.status(500).json({ error: 'PayPal credentials not configured' });
+
+    const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+    const tokenResp = await axios.post(`${base}/v1/oauth2/token`, 'grant_type=client_credentials', {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Authorization: `Basic ${auth}`
+      }
+    });
+    const accessToken = tokenResp.data.access_token;
+
+    const captureResp = await axios.post(`${base}/v2/checkout/orders/${orderID}/capture`, {}, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    return res.json(captureResp.data);
+  } catch (error) {
+    console.error('PayPal capture error:', error.response?.data || error.message);
+    res.status(500).json({ error: error.response?.data || error.message });
+  }
+});
+
+/**
+ * Stripe card payment endpoints
+ */
+app.post('/api/payments/stripe/create-intent', async (req, res) => {
+  try {
+    const { amount, orderId } = req.body;
+    if (!amount || !orderId) return res.status(400).json({ error: 'Amount and orderId are required' });
+
+    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount,
+      currency: (process.env.STRIPE_CURRENCY || 'usd').toLowerCase(),
+      metadata: { orderId }
+    });
+
+    return res.json({ clientSecret: paymentIntent.client_secret, intentId: paymentIntent.id });
+  } catch (error) {
+    console.error('Stripe create intent error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/payments/stripe/confirm', async (req, res) => {
+  try {
+    const { intentId } = req.body;
+    if (!intentId) return res.status(400).json({ error: 'intentId is required' });
+
+    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    const intent = await stripe.paymentIntents.retrieve(intentId);
+    
+    return res.json(intent);
+  } catch (error) {
+    console.error('Stripe confirm error:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
