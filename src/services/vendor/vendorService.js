@@ -7,10 +7,8 @@ import {
   query, 
   where, 
   getDoc,
-  deleteDoc,
-  orderBy,
   limit,
-  startAfter,
+  orderBy,
   Timestamp,
   onSnapshot
 } from 'firebase/firestore';

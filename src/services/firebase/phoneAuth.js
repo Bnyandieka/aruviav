@@ -2,9 +2,7 @@
 
 import {
   signInWithPhoneNumber,
-  RecaptchaVerifier,
-  PhoneAuthProvider,
-  signInWithCredential
+  RecaptchaVerifier
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp, collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { auth, db } from './config';
@@ -249,7 +247,7 @@ export const formatPhoneNumber = (phoneNumber, countryCode = '+254') => {
   return countryCode + digits;
 };
 
-export default {
+const phoneAuthService = {
   initRecaptchaVerifier,
   clearRecaptchaVerifier,
   sendPhoneOTP,
@@ -258,3 +256,5 @@ export default {
   checkPhoneNumberExists,
   formatPhoneNumber
 };
+
+export default phoneAuthService;

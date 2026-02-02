@@ -1,5 +1,5 @@
 // src/pages/ProductDetailsPage.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
   FiHeart, 
@@ -8,7 +8,6 @@ import {
   FiPlus, 
   FiTruck, 
   FiRefreshCw, 
-  FiShield,
   FiStar,
   FiChevronRight,
   FiShare2
@@ -35,7 +34,6 @@ const ProductDetailsPage = () => {
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [relatedProducts, setRelatedProducts] = useState([]);
-  const [activeTab, setActiveTab] = useState('description');
   const [imageError, setImageError] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviews, setReviews] = useState([]);
@@ -101,7 +99,7 @@ const ProductDetailsPage = () => {
   }, [id]);
 
   // Fetch related products
-  const fetchRelatedProducts = async (category) => {
+  const fetchRelatedProducts = useCallback(async (category) => {
     try {
       const productsRef = collection(db, 'products');
       const q = query(
@@ -117,7 +115,7 @@ const ProductDetailsPage = () => {
     } catch (error) {
       console.error('Error fetching related products:', error);
     }
-  };
+  }, [id]);
 
   // Handle quantity changes
   const handleQuantityChange = (type) => {

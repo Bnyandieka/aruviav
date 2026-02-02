@@ -663,7 +663,7 @@ export const getNewsletterSubscribers = async (listId = null, limit = 500, offse
   }
 };
 
-export default {
+const brevoService = {
   sendTransactionalEmail,
   sendBrevEmail: sendTransactionalEmail, // Alias for compatibility
   subscribeToNewsletter,
@@ -676,3 +676,5 @@ export default {
   getLogoUrl,
   getNewsletterSubscribers
 };
+
+export default brevoService;

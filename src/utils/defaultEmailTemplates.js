@@ -350,43 +350,6 @@ export const DEFAULT_EMAIL_TEMPLATES = {
     `
   },
 
-  orderShipped: {
-    subject: '🚚 Your Order Has Shipped! - {{orderNumber}}',
-    htmlContent: `
-      <h2>Your Order is On the Way!</h2>
-      <p>Great news! Your order has been shipped.</p>
-      <p><strong>Order #:</strong> {{orderNumber}}</p>
-      <p><strong>Tracking Number:</strong> {{trackingNumber}}</p>
-      <p><strong>Estimated Delivery:</strong> {{estimatedDelivery}}</p>
-      <p>Click below to track your shipment in real-time.</p>
-      <a href="{{trackingUrl}}" style="background-color: #ff9800; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block;">Track Shipment</a>
-    `
-  },
-
-  orderCompleted: {
-    subject: '✅ Order Delivered - {{orderNumber}}',
-    htmlContent: `
-      <h2>Your Order Has Been Delivered!</h2>
-      <p>We're excited to let you know that your order has arrived!</p>
-      <p><strong>Order #:</strong> {{orderNumber}}</p>
-      <p>We hope you enjoy your purchase. If you have any questions or concerns, please don't hesitate to reach out.</p>
-      <p><a href="{{trackingUrl}}" style="color: #ff9800;">View your order details</a></p>
-      <p>Thank you for shopping with us!</p>
-    `
-  },
-
-  orderCancelled: {
-    subject: '❌ Order Cancelled - {{orderNumber}}',
-    htmlContent: `
-      <h2>Order Cancellation Notice</h2>
-      <p>Your order has been cancelled.</p>
-      <p><strong>Order #:</strong> {{orderNumber}}</p>
-      <p>{{statusMessage}}</p>
-      <p>If you have any questions about this cancellation, please contact our support team.</p>
-      <a href="{{trackingUrl}}" style="background-color: #ff9800; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block;">View Order</a>
-    `
-  },
-
   orderReturned: {
     subject: '↩️ Order Return Processed - {{orderNumber}}',
     htmlContent: `

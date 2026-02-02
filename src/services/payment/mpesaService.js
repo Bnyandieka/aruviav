@@ -121,8 +121,10 @@ export const validateMpesaPaymentData = (paymentData) => {
   return { valid: true };
 };
 
-export default {
+const mpesaService = {
   initiateMpesaPayment,
   formatPhoneNumber,
   validateMpesaPaymentData
 };
+
+export default mpesaService;

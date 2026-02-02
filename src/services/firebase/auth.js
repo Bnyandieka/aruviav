@@ -290,7 +290,7 @@ export const confirmReset = async (code, newPassword) => {
   }
 };
 
-export default {
+const authService = {
   signUpWithEmail,
   signInWithEmail,
   signInWithGoogle,
@@ -304,3 +304,5 @@ export default {
   verifyResetCode,
   confirmReset,
 };
+
+export default authService;
