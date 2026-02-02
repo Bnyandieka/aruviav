@@ -487,7 +487,7 @@ export const updateOrderStatus = async (orderId, statusOrData, vendorId = null) 
       updatePayload = { status: statusString };
     } else if (typeof statusOrData === 'object' && statusOrData !== null) {
       // New: object with paymentStatus, transactionData, etc.
-      const { paymentStatus, status, transactionId, checkoutRequestID, transactionData, paymentError, lastUpdated } = statusOrData;
+      const { paymentStatus, status, transactionId, checkoutRequestID, transactionData, paymentError } = statusOrData;
       
       statusString = status || paymentStatus || 'payment_processing';
       updatePayload.status = statusString;

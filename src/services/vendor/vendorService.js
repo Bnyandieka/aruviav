@@ -744,7 +744,6 @@ export const sendAdminVendorApplicationNotification = async (appData, applicatio
     // Import email services
     const { sendBrevEmail } = await import('../email/brevoService');
     const { saveEmailToAdminInbox } = await import('../email/adminEmailService');
-    const { getEmailTemplate, getLogoUrl } = await import('../email/brevoService');
     const { DEFAULT_EMAIL_TEMPLATES } = await import('../../utils/defaultEmailTemplates');
 
     // Get admin email (usually from settings, fallback to default)
@@ -808,7 +807,7 @@ export const sendAdminVendorApplicationNotification = async (appData, applicatio
       htmlContent
     };
 
-    const sendResult = await sendBrevEmail(emailPayload);
+    await sendBrevEmail(emailPayload);
     
     // Save to admin inbox regardless of Brevo result (for internal storage)
     await saveEmailToAdminInbox({
