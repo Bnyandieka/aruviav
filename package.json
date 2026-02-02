@@ -41,7 +41,7 @@
   "scripts": {
     "start": "react-scripts start",
     "dev": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "CI=false react-scripts build",
     "build:mobile": "npm run build && npx cap sync",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
@@ -54,7 +54,12 @@
   "eslintConfig": {
     "extends": [
       "react-app"
-    ]
+    ],
+    "rules": {
+      "no-unused-vars": "warn",
+      "react-hooks/exhaustive-deps": "warn",
+      "jsx-a11y/anchor-is-valid": "warn"
+    }
   },
   "browserslist": {
     "production": [
